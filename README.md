@@ -4,8 +4,7 @@ Beta builds of the apps I make. Download one, try it, and tell me what breaks.
 
 | App | Platform | Release tag |
 |---|---|---|
-| Hand Mouse Controller | macOS 14+ | `hand-mouse-controller-v0.1` |
-| Morning Brief | macOS 14+ | `morning-brief-v0.1` |
+| Life Dashboard | macOS 14+ | `life-dashboard-v0.1` |
 | DeskWatch | iPhone + Mac | coming soon |
 | One More Floor | Browser | [Play now](https://joeysayshi.github.io/joey-apps/one-more-floor/) |
 
