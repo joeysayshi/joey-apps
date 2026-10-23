@@ -1,0 +1,1685 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>One More Floor</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap">
+<style>
+/* Layout: one full-bleed canvas is the world. A 30rem column of chunky, outlined arcade chrome sits over it:
+   count top-left, icon buttons top-right, cream panels with hard drop shadows for menus and results. */
+:root{
+  --ink:#161a3a;                      /* every outline and hard shadow */
+  --paper:#fffaf0;                    /* panels, outlined lettering */
+  --sun:#ffcf3f;                      /* highlight, stars, "you" */
+  --go:#45d483;                       /* the button that moves you forward */
+  --sky:#58b5ee;                      /* page ground before the canvas paints */
+  --lock:#b9bdd6;                     /* locked tiles */
+  --bad:#c5352b; --ok:#17804a;        /* form messages */
+  --display:"Lilita One","Arial Rounded MT Bold","Trebuchet MS",sans-serif;
+  --body:"Nunito","Avenir Next","Segoe UI",system-ui,sans-serif;
+  color-scheme:light;
+}
+html,body{height:100%}
+body{
+  background:var(--sky);color:var(--ink);font-family:var(--body);font-weight:800;
+  overflow:hidden;overscroll-behavior:none;
+  -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent;
+}
+input{-webkit-user-select:text;user-select:text}
+#stage{position:relative;height:100%;overflow:hidden;touch-action:none;cursor:pointer}
+#c{position:absolute;inset:0;width:100%;height:100%;display:block}
+.defs{position:absolute;width:0;height:0;overflow:hidden}
+.ic{width:24px;height:24px;display:block;flex:none}
+
+.col{
+  position:absolute;inset:0;margin-inline:auto;max-width:30rem;
+  padding-inline:16px;padding-block:14px;
+  display:flex;flex-direction:column;pointer-events:none;
+}
+
+/* cream lettering with an ink ring, readable on any sky */
+.outline{
+  --o:2px;color:var(--paper);
+  text-shadow:calc(var(--o)*-1) calc(var(--o)*-1) 0 var(--ink),var(--o) calc(var(--o)*-1) 0 var(--ink),
+    calc(var(--o)*-1) var(--o) 0 var(--ink),var(--o) var(--o) 0 var(--ink),
+    0 calc(var(--o)*-1) 0 var(--ink),0 var(--o) 0 var(--ink),calc(var(--o)*-1) 0 0 var(--ink),var(--o) 0 0 var(--ink),
+    0 calc(var(--o)*2.4) 0 var(--ink);
+}
+
+/* ---- buttons ---- */
+.btn{
+  pointer-events:auto;cursor:pointer;color:var(--ink);background:var(--paper);
+  border:3px solid var(--ink);border-radius:16px;box-shadow:0 5px 0 var(--ink);
+  font:400 1.25rem/1 var(--display);letter-spacing:.02em;padding:12px 16px;
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  transition:transform .06s,box-shadow .06s;
+}
+.btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.btn:focus-visible,.tile:focus-visible,.seg button:focus-visible,.rm:focus-visible,input:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.btn.go{background:var(--go)}
+.btn.sun{background:var(--sun)}
+.btn.icon{width:48px;height:48px;padding:0;border-radius:14px}
+.btn.sm{font-size:1.05rem;padding:10px 14px;border-radius:12px;box-shadow:0 4px 0 var(--ink)}
+.btn.xl{font-size:2rem;padding:15px 18px;border-radius:20px;box-shadow:0 7px 0 var(--ink)}
+.btn.xl:active{transform:translateY(5px);box-shadow:0 2px 0 var(--ink)}
+.btn.xl .ic{width:30px;height:30px}
+
+/* ---- top bar ---- */
+.hud{display:flex;align-items:flex-start;gap:10px;min-height:53px}
+.count{display:grid;justify-items:start;gap:7px}
+.count .big{font:400 4.6rem/.8 var(--display);--o:3px;font-variant-numeric:tabular-nums;transform-origin:left bottom}
+.count .big small{font-size:1.7rem;margin-left:4px}
+.count .big.bump{animation:bump .18s ease-out}
+@keyframes bump{from{transform:scale(1.16)}to{transform:scale(1)}}
+.bar{width:132px;height:17px;border:3px solid var(--ink);border-radius:10px;background:var(--paper);overflow:hidden;box-shadow:0 3px 0 var(--ink)}
+.bar i{display:block;height:100%;width:0;background:var(--go);transition:width .2s}
+.sub{font:900 1.05rem/1 var(--body);--o:1.5px;font-variant-numeric:tabular-nums}
+.rival{font:900 .82rem/1 var(--body);background:var(--paper);border:2px solid var(--ink);border-radius:9px;padding:5px 8px;box-shadow:0 3px 0 var(--ink);max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.right{display:flex;align-items:center;gap:8px;margin-left:auto}
+
+/* ---- home ---- */
+.home{flex:1;min-height:0;display:flex;flex-direction:column}
+.logo{
+  margin:-34px 0 0;display:grid;justify-items:start;transform:rotate(-4deg);transform-origin:left top;
+  font:400 clamp(3.3rem,min(22vw,12vh),6rem)/.9 var(--display);text-transform:uppercase;--o:3px;
+}
+/* each word is a floor that landed a little off the one below */
+.logo span:nth-child(2){transform:translateX(.3em)}
+.logo span:nth-child(3){transform:translateX(.1em)}
+.homeBtns{margin-top:auto;display:grid;gap:12px;padding-bottom:1.5vh}
+.who{justify-self:start;font:900 .9rem/1 var(--body);padding:8px 12px;border-radius:12px;box-shadow:0 4px 0 var(--ink);max-width:100%}
+.who .ic{width:18px;height:18px}
+.who span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#hPlay{display:grid;grid-template-columns:auto auto;justify-content:center;column-gap:12px;row-gap:3px}
+#hPlay .ic{grid-row:1 / span 2;align-self:center}
+#hPlay small{font:900 .86rem/1 var(--body);letter-spacing:.04em;text-align:left}
+#hPlay b{font-weight:400;text-align:left;text-transform:uppercase}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.trio .btn{flex-direction:column;gap:6px;font-size:1.05rem;padding:11px 6px}
+
+/* ---- full screens: levels, friends ---- */
+.screen{
+  flex:1;min-height:0;margin-top:2px;overflow-y:auto;overflow-x:hidden;pointer-events:auto;touch-action:pan-y;cursor:default;
+  display:grid;grid-template-columns:minmax(0,1fr);align-content:start;gap:12px;padding:0 4px 12px;
+}
+.shead{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.shead h2{margin:0;font:400 2.7rem/1 var(--display);text-transform:uppercase;--o:3px}
+.tally{font:400 1.3rem/1 var(--display);display:inline-flex;align-items:center;gap:5px}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px 10px}
+.tile{
+  aspect-ratio:1;display:grid;place-items:center;align-content:center;gap:5px;cursor:pointer;padding:0;
+  color:var(--ink);background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 5px 0 var(--ink);
+  font:400 1.9rem/1 var(--display);transition:transform .06s,box-shadow .06s;
+}
+.tile:active{transform:translateY(4px);box-shadow:0 1px 0 var(--ink)}
+.tile.now{background:var(--sun)}
+.tile.locked{background:var(--lock);color:rgba(22,26,58,.55);cursor:default}
+.tile.locked:active{transform:none;box-shadow:0 5px 0 var(--ink)}
+.tile .s{display:flex;gap:1px}
+.tip{margin:0;font:800 .9rem/1.35 var(--body);--o:1.5px}
+
+.st{width:1em;height:1em;display:block;stroke:var(--ink);stroke-width:2.2;stroke-linejoin:round;fill:rgba(22,26,58,.14)}
+.st.on{fill:var(--sun)}
+.tile .st{font-size:15px}
+.tally .st{font-size:20px}
+
+.panel{
+  pointer-events:auto;background:var(--paper);color:var(--ink);
+  border:3px solid var(--ink);border-radius:22px;box-shadow:0 7px 0 var(--ink);padding:14px 16px 16px;
+}
+.card{display:grid;gap:9px}
+.lab{font:900 .76rem/1 var(--body);letter-spacing:.09em;text-transform:uppercase}
+.rowin{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+input{
+  box-sizing:border-box;min-width:0;width:100%;border:3px solid var(--ink);border-radius:12px;padding:10px 12px;
+  font:800 1rem/1.2 var(--body);background:#fff;color:var(--ink);
+}
+input::placeholder{color:rgba(22,26,58,.45)}
+.msg{margin:0;font:800 .88rem/1.35 var(--body);color:rgba(22,26,58,.7)}
+.msg:empty{display:none}
+.msg.bad{color:var(--bad)} .msg.ok{color:var(--ok)}
+.back{display:grid;gap:6px}
+.back div{display:flex;align-items:center;justify-content:space-between;gap:8px;font:800 .95rem/1.2 var(--body)}
+.back div>span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.back .do{display:flex;align-items:center;gap:8px;flex:none}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border:3px solid var(--ink);border-radius:12px;overflow:hidden}
+.seg button{border:0;background:var(--paper);color:var(--ink);font:400 1.05rem/1 var(--display);padding:10px 6px;cursor:pointer}
+.seg button+button{border-left:3px solid var(--ink)}
+.seg button.on{background:var(--ink);color:var(--paper)}
+.seg.small button{font-size:.92rem;padding:7px 6px}
+.board{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+.board li{
+  display:grid;grid-template-columns:1.7rem minmax(0,1fr) auto auto;align-items:center;gap:8px;
+  padding:7px 10px;border:2px solid var(--ink);border-radius:12px;background:#fff;font:800 1rem/1.2 var(--body);
+}
+.board li.me{background:var(--sun)}
+.board .rk{font:400 1.1rem/1 var(--display);text-align:center}
+.board .nm{display:flex;align-items:center;gap:6px;min-width:0}
+.board .nm b{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.board .tg{flex:none;font:900 .6rem/1 var(--body);letter-spacing:.08em;text-transform:uppercase;border:2px solid var(--ink);border-radius:6px;padding:2px 4px}
+.board .vl{font:400 1.2rem/1 var(--display);font-variant-numeric:tabular-nums;display:inline-flex;align-items:center;gap:4px}
+.board .vl .st{font-size:17px}
+.rm{width:30px;height:30px;display:grid;place-items:center;padding:0;cursor:pointer;background:transparent;color:var(--ink);border:2px solid var(--ink);border-radius:9px}
+.rm .ic{width:14px;height:14px}
+
+/* ---- level brief (top) and results (bottom) ---- */
+.brief{margin-top:10px;display:grid;gap:8px;animation:pop .22s cubic-bezier(.2,.9,.3,1.2) both}
+.over{margin-top:auto;display:grid;gap:10px;animation:pop .22s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes pop{from{opacity:0;transform:translateY(22px) scale(.97)}to{opacity:1;transform:none}}
+.tag{justify-self:start;margin:0;font:900 .72rem/1 var(--body);letter-spacing:.1em;text-transform:uppercase;background:var(--ink);color:var(--paper);border-radius:8px;padding:5px 8px}
+.panel h2{margin:0;font:400 clamp(2.1rem,11vw,2.8rem)/.95 var(--display);text-transform:uppercase;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
+.panel h2 small{font-size:.5em}
+.hint{margin:0;font:800 1rem/1.35 var(--body)}
+.goal{justify-self:start;margin:0;font:400 1.05rem/1 var(--display);background:var(--sun);border:2px solid var(--ink);border-radius:9px;padding:6px 9px}
+.stars{display:flex;gap:6px;font-size:3.1rem}
+.stars .st{stroke-width:1.9}
+.stars .st.on{animation:star .3s cubic-bezier(.2,1.4,.4,1) both}
+.stars .st:nth-child(2){animation-delay:.14s}
+.stars .st:nth-child(3){animation-delay:.28s}
+@keyframes star{from{transform:scale(0) rotate(-40deg)}to{transform:none}}
+.stats{display:flex;gap:22px;margin:0}
+.stats div{display:grid;gap:2px}
+.stats dt{font:900 .68rem/1 var(--body);letter-spacing:.09em;text-transform:uppercase;color:rgba(22,26,58,.66)}
+.stats dd{margin:0;font:400 1.55rem/1 var(--display);font-variant-numeric:tabular-nums}
+.actions{display:grid;grid-template-columns:auto auto minmax(0,1fr);gap:10px;align-items:center}
+.actions.two{grid-template-columns:auto minmax(0,1fr)}
+
+.prompt{margin:auto 0 7vh;text-align:center;font:400 1.6rem/1 var(--display);text-transform:uppercase;animation:breathe 1.4s ease-in-out infinite alternate}
+@keyframes breathe{from{transform:scale(1)}to{transform:scale(1.07)}}
+
+.toast{
+  position:absolute;left:50%;top:27%;transform:translateX(-50%);
+  width:max-content;max-width:calc(100% - 32px);text-align:center;
+  background:var(--paper);color:var(--ink);border:3px solid var(--ink);border-radius:14px;box-shadow:0 5px 0 var(--ink);
+  padding:8px 14px;font:400 1.2rem/1.1 var(--display);
+}
+.toast.show{animation:toast 1.9s ease-out both}
+@keyframes toast{
+  0%{opacity:0;transform:translateX(-50%) translateY(10px) scale(.9)}
+  10%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+  80%{opacity:1;transform:translateX(-50%) translateY(0) scale(1)}
+  100%{opacity:0;transform:translateX(-50%) translateY(-8px) scale(1)}
+}
+
+/* the verdict that slams in the moment a run ends */
+.stamp{
+  position:absolute;left:16px;right:16px;top:23%;text-align:center;pointer-events:none;
+  font:400 clamp(2.5rem,13vw,3.6rem)/.95 var(--display);text-transform:uppercase;--o:3px;
+  transform:rotate(-5deg);text-wrap:balance;
+}
+.stamp.win{color:var(--sun)}
+.stamp.lose{color:#ff9384}
+.stamp.show{animation:stamp .34s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes stamp{from{opacity:0;transform:rotate(-5deg) scale(2.3)}to{opacity:1;transform:rotate(-5deg) scale(1)}}
+
+@media (prefers-reduced-motion:reduce){
+  .prompt,.brief,.over,.toast.show,.stamp.show,.count .big.bump,.stars .st.on{animation:none}
+  .btn,.tile{transition:none}
+}
+</style>
+
+<svg class="defs" aria-hidden="true">
+  <defs>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5L2.6 9.4l6.5-.9z"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><path d="M7.5 10.5V8a4.5 4.5 0 0 1 9 0v2.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><rect x="5" y="10.5" width="14" height="10" rx="3" fill="currentColor"/></symbol>
+    <symbol id="i-restart" viewBox="0 0 24 24"><path d="M19.2 13a7.2 7.2 0 1 1-2.2-6.2" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><path d="M18.6 2.8v5h-5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3.5" y="3.5" width="7" height="7" rx="2" fill="currentColor"/><rect x="13.5" y="3.5" width="7" height="7" rx="2" fill="currentColor"/><rect x="3.5" y="13.5" width="7" height="7" rx="2" fill="currentColor"/><rect x="13.5" y="13.5" width="7" height="7" rx="2" fill="currentColor"/></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3.5 11.5L12 4l8.5 7.5V19a1.5 1.5 0 0 1-1.5 1.5h-4V15h-6v5.5H5A1.5 1.5 0 0 1 3.5 19z" fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 5L7.5 12l7 7" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-next" viewBox="0 0 24 24"><path d="M7 4.5l12 7.5-12 7.5z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-trophy" viewBox="0 0 24 24"><path d="M7.5 3.5h9V9a4.5 4.5 0 0 1-9 0z" fill="currentColor"/><path d="M7.5 5.5H4.2A3.3 3.3 0 0 0 7.8 9.6M16.5 5.5h3.3a3.3 3.3 0 0 1-3.6 4.1M12 13.5v4M8 20.5h8" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></symbol>
+    <symbol id="i-inf" viewBox="0 0 24 24"><path d="M7.4 16a4 4 0 1 1 0-8c3.4 0 5.8 8 9.2 8a4 4 0 1 0 0-8c-3.4 0-5.8 8-9.2 8z" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linejoin="round"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M5 5l14 14M19 5L5 19" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4.2" fill="currentColor"/><path d="M4 20.5a8 8 0 0 1 16 0z" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<div id="stage">
+  <canvas id="c" role="img" aria-label="A tower being built floor by floor. Tap, or press Space, to drop the sliding floor."></canvas>
+  <div class="col">
+    <header class="hud">
+      <div class="count" id="count" hidden>
+        <div class="big outline" id="big"><span id="num">0</span><small id="den"></small></div>
+        <div class="bar" id="bar" hidden><i id="barFill"></i></div>
+        <div class="sub outline" id="sub" hidden>0 m</div>
+        <div class="rival" id="rival" hidden></div>
+      </div>
+      <div class="right">
+        <button id="bRestart" class="btn icon" type="button" aria-label="Restart" hidden><svg class="ic" aria-hidden="true"><use href="#i-restart"></use></svg></button>
+        <button id="bBack" class="btn icon" type="button" aria-label="Back" hidden><svg class="ic" aria-hidden="true"><use href="#i-back"></use></svg></button>
+        <button id="bSound" class="btn icon" type="button" aria-pressed="false" aria-label="Sound is on. Turn sound off.">
+          <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M3.5 9v6h4l5.5 4.5v-15L7.5 9h-4z" fill="currentColor" stroke="none"></path>
+            <path id="waves" d="M16.5 8.8a4.6 4.6 0 0 1 0 6.4M19.2 6.2a8.2 8.2 0 0 1 0 11.6"></path>
+            <path id="slash" d="M17 9.5l5 5M22 9.5l-5 5" hidden></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+
+    <section class="home" id="home">
+      <h1 class="logo outline"><span>One</span><span>More</span><span>Floor</span></h1>
+      <div class="homeBtns">
+        <button id="hWho" class="btn who" type="button"><svg class="ic" aria-hidden="true"><use href="#i-user"></use></svg><span id="hWhoText">Pick a username</span></button>
+        <button id="hPlay" class="btn go xl" type="button"><svg class="ic" aria-hidden="true"><use href="#i-next"></use></svg><b>Play</b><small id="hPlaySub">Level 1</small></button>
+        <div class="trio">
+          <button id="hLevels" class="btn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-grid"></use></svg><span>Levels</span></button>
+          <button id="hEndless" class="btn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-inf"></use></svg><span>Endless</span></button>
+          <button id="hFriends" class="btn" type="button"><svg class="ic" aria-hidden="true"><use href="#i-trophy"></use></svg><span>Friends</span></button>
+        </div>
+      </div>
+    </section>
+
+    <section class="screen" id="levels" hidden>
+      <div class="shead"><h2 class="outline">Levels</h2><span class="tally outline" id="tally"></span></div>
+      <div class="grid" id="grid"></div>
+      <p class="tip outline">Clear a level to open the next one. Keep 80% of your width for three stars.</p>
+    </section>
+
+    <section class="screen" id="friendsScr" hidden>
+      <div class="shead"><h2 class="outline">Friends</h2></div>
+      <div class="panel card">
+        <label class="lab" for="nameIn">Your username</label>
+        <div class="rowin">
+          <input id="nameIn" type="text" maxlength="14" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="3 to 14 letters or numbers">
+          <button id="nameSave" class="btn sun sm" type="button">Save</button>
+        </div>
+        <p class="msg" id="nameMsg"></p>
+        <p class="msg" id="netStatus"></p>
+        <div class="back" id="localList" hidden></div>
+        <button id="newPlayer" class="btn sm" type="button">New player on this device</button>
+      </div>
+      <div class="panel card">
+        <label class="lab" for="friendIn">Add a friend</label>
+        <div class="rowin">
+          <input id="friendIn" type="text" maxlength="600" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Username or friend code">
+          <button id="friendAdd" class="btn go sm" type="button">Add</button>
+        </div>
+        <p class="msg" id="friendMsg"></p>
+        <div class="back" id="addedYou" hidden></div>
+        <button id="codeBtn" class="btn sm" type="button">Copy my friend code</button>
+        <input id="codeOut" type="text" readonly aria-label="Your friend code" hidden>
+        <p class="msg" id="codeMsg"></p>
+      </div>
+      <div class="panel card">
+        <div class="seg" id="segBoard">
+          <button type="button" data-board="endless" class="on" aria-pressed="true">Endless</button>
+          <button type="button" data-board="levels" aria-pressed="false">Levels</button>
+        </div>
+        <div class="seg small" id="segScope">
+          <button type="button" data-scope="device" class="on" aria-pressed="true">This device</button>
+          <button type="button" data-scope="friends" aria-pressed="false">Friends</button>
+          <button type="button" data-scope="all" aria-pressed="false">Everyone</button>
+        </div>
+        <ol class="board" id="board"></ol>
+        <p class="msg" id="boardMsg"></p>
+      </div>
+    </section>
+
+    <section class="panel brief" id="brief" hidden>
+      <p class="tag" id="bTag">Level 1 of 20</p>
+      <h2 id="bName">Groundwork</h2>
+      <p class="hint" id="bHint"></p>
+      <p class="goal" id="bGoal">6 floors</p>
+    </section>
+
+    <div class="toast" id="toast" role="status" hidden></div>
+    <div class="stamp outline" id="stamp" aria-hidden="true" hidden></div>
+    <p class="prompt outline" id="prompt" hidden>Tap to start</p>
+
+    <section class="panel over" id="over" aria-live="polite" hidden>
+      <p class="tag" id="oTag">Endless</p>
+      <h2><span id="oTitle">Floor 0</span><small id="oSub"></small></h2>
+      <div class="stars" id="oStars" hidden></div>
+      <dl class="stats">
+        <div><dt id="k1">Best</dt><dd id="v1">0</dd></div>
+        <div><dt id="k2">Perfect run</dt><dd id="v2">0</dd></div>
+        <div><dt id="k3">Perfects</dt><dd id="v3">0</dd></div>
+      </dl>
+      <p class="hint" id="oNote"></p>
+      <ol class="board" id="oBoard" hidden></ol>
+      <div class="actions" id="oActions">
+        <button id="oMenu" class="btn icon" type="button" aria-label="Menu"><svg class="ic" aria-hidden="true"><use id="oMenuIcon" href="#i-home"></use></svg></button>
+        <button id="oRetry" class="btn icon" type="button" aria-label="Play this level again"><svg class="ic" aria-hidden="true"><use href="#i-restart"></use></svg></button>
+        <button id="oGo" class="btn go xl" type="button"><span id="oGoText">Again</span><svg class="ic" aria-hidden="true"><use href="#i-next"></use></svg></button>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+(() => {
+  'use strict';
+  const $ = id => document.getElementById(id);
+  const stage = $('stage'), cv = $('c'), ctx = cv.getContext('2d');
+  const el = {};
+  ['count', 'big', 'num', 'den', 'bar', 'barFill', 'sub', 'rival', 'bRestart', 'bBack', 'bSound', 'waves', 'slash',
+    'home', 'hWho', 'hWhoText', 'hPlay', 'hPlaySub', 'hLevels', 'hEndless', 'hFriends',
+    'levels', 'tally', 'grid', 'friendsScr', 'nameIn', 'nameSave', 'nameMsg', 'netStatus', 'localList', 'newPlayer', 'friendIn', 'friendAdd', 'friendMsg',
+    'addedYou', 'codeBtn', 'codeOut', 'codeMsg', 'segBoard', 'segScope', 'board', 'boardMsg',
+    'brief', 'bTag', 'bName', 'bHint', 'bGoal', 'toast', 'stamp', 'prompt',
+    'over', 'oTag', 'oTitle', 'oSub', 'oStars', 'k1', 'v1', 'k2', 'v2', 'k3', 'v3', 'oNote', 'oBoard', 'oActions', 'oMenu', 'oMenuIcon', 'oRetry', 'oGo', 'oGoText'
+  ].forEach(k => { el[k] = $(k); });
+
+  /* ---------- constants (world units; one floor is 24 units thick) ---------- */
+  const FLOOR_M = 3.5;        // metres per storey, a typical office floor-to-floor height
+  const SLAB_H = 24, VIEW_W = 340, TRAVEL = 185, GRID = 11;
+  const ANCHOR = 0.64;        // upright builds: tower top sits this far down the screen
+  const AX = 0.42, AY = 0.52; // sideways builds: leading edge and centre line
+  const HY = 140, FALL_T = 0.36;
+  const INK = '#161a3a', PAPER = '#fffaf0', GROUND = '#151a3c';
+
+  const LANDMARKS = [
+    { name: 'a giraffe', h: 5.5 },
+    { name: 'the Hollywood Sign', h: 13.7 },
+    { name: 'a blue whale on its tail', h: 30 },
+    { name: 'the Leaning Tower of Pisa', h: 56 },
+    { name: 'the Statue of Liberty', h: 93 },
+    { name: 'the Great Pyramid of Giza', h: 139 },
+    { name: 'the Washington Monument', h: 169 },
+    { name: 'the Golden Gate Bridge', h: 227 },
+    { name: 'Sydney Tower', h: 309 },
+    { name: 'the Eiffel Tower', h: 330 },
+    { name: 'the Empire State Building', h: 443 },
+    { name: 'Shanghai Tower', h: 632 },
+    { name: 'the Burj Khalifa', h: 828 }
+  ];
+  const floorsToPass = h => Math.floor(h / FLOOR_M) + 1;
+
+  /* A level sets the pace (sp0, ramp, cap), the pieces (style, w0) and the trick (side, m). */
+  const LV = (name, hint, o) => Object.assign({ name, hint, unit: 'Floor', units: 'floors', target: 10, sp0: 120, ramp: 2.5, cap: 160, w0: 176,
+    side: false, style: 'office', alt0: 0, hue0: 192, hueStep: 6.5, m: {} }, o);
+  const SIDE = { side: true, unit: 'Span', units: 'spans', style: 'truss', hue0: 14, hueStep: 0 };
+  const ENDLESS = LV('Endless', '', { target: Infinity, sp0: 128, ramp: 3.1, cap: 330, jitterFrom: 8 });
+  const LEVELS = [
+    LV('Groundwork', 'Tap when the floor is over the tower. Overhang gets cut off.', { target: 6, sp0: 105, cap: 130 }),
+    LV('Sideways', 'Same job on its side. Bolt on spans until you reach the far cliff.', Object.assign({}, SIDE, { target: 8, sp0: 120, ramp: 3, cap: 160, alt0: 14 })),
+    LV('Glasshouse', 'The floor breathes in and out. Drop it while it is wide.', { target: 8, sp0: 116, ramp: 2, cap: 140, alt0: 3, style: 'glass', m: { pulse: 1 } }),
+    LV('Crane Drop', 'The panel keeps drifting as it falls. Let go early.', { target: 8, sp0: 110, cap: 145, alt0: 8, style: 'panel', m: { crane: 1 } }),
+    LV('Fog Bank', 'Floors vanish over the tower. Count the beat, then tap.', { target: 8, sp0: 130, ramp: 0, cap: 130, alt0: 30, style: 'night', m: { fog: 1 } }),
+    LV('Mixed Load', 'Amber floors are extra wide. Red floors come in fast.', { target: 10, sp0: 128, ramp: 3, cap: 180, m: { mixed: 1 }, jitterFrom: 4 }),
+    LV('High Wind', 'The tower sways. Aim for where the top is now.', { target: 10, sp0: 132, ramp: 3, cap: 180, alt0: 55, hue0: 150, hueStep: 4, m: { sway: 1 }, jitterFrom: 4 }),
+    LV('Rush Job', 'A narrow tower and floors that only get faster.', { target: 12, sp0: 205, ramp: 7, cap: 320, w0: 150, alt0: 16, hue0: 330, hueStep: 9, jitterFrom: 0 }),
+    LV('Sea Mist', 'A sideways build with fog over the deck.', Object.assign({}, SIDE, { target: 10, sp0: 128, ramp: 0, cap: 128, alt0: 30, hue0: 190, m: { fog: 1 } })),
+    LV('Glass in a Gale', 'Breathing glass on a swaying tower.', { target: 10, sp0: 120, ramp: 2, cap: 150, alt0: 20, style: 'glass', m: { pulse: 1, sway: 1 } }),
+    LV('Mixed Freight', 'Sideways, with wide spans and fast ones.', Object.assign({}, SIDE, { target: 12, sp0: 128, ramp: 3, cap: 175, alt0: 14, m: { mixed: 1 } })),
+    LV('Night Crane', 'A crane drop in fog. Let go just as the panel fades.', { target: 10, sp0: 112, ramp: 1.5, cap: 135, alt0: 55, style: 'panel', m: { crane: 1, fog: 1 } }),
+    LV('Pencil Tower', 'A skinny tower. Every sliver counts.', { target: 14, sp0: 120, cap: 165, w0: 104, alt0: 6, hue0: 20, hueStep: 5 }),
+    LV('Rope Bridge', 'The bridge bobs up and down. Time it to the swell.', Object.assign({}, SIDE, { target: 12, sp0: 128, cap: 165, alt0: 16, hue0: 34, m: { sway: 1 } })),
+    LV('Storm Crane', 'A crane drop onto a swaying tower.', { target: 10, sp0: 114, ramp: 2, cap: 145, alt0: 60, style: 'panel', m: { crane: 1, sway: 1 } }),
+    LV('Express Freight', 'Mixed loads at rush-hour speed.', { target: 14, sp0: 165, ramp: 5, cap: 250, alt0: 10, m: { mixed: 1 }, jitterFrom: 0 }),
+    LV('Glass Bridge', 'A sideways build with breathing glass.', Object.assign({}, SIDE, { target: 12, sp0: 124, cap: 160, alt0: 3, style: 'glass', m: { pulse: 1 } })),
+    LV('Whiteout', 'Fog and wind together. Trust the rhythm.', { target: 12, sp0: 130, ramp: 0, cap: 130, alt0: 34, style: 'night', m: { fog: 1, sway: 1 } }),
+    LV('Double Shift', 'Mixed loads in a high wind.', { target: 14, sp0: 140, ramp: 3.5, cap: 200, alt0: 70, m: { mixed: 1, sway: 1 }, jitterFrom: 2 }),
+    LV('The Spire', 'Skinny, fast and swaying. Twenty floors to the top.', { target: 20, sp0: 170, ramp: 5, cap: 290, w0: 120, alt0: 90, hue0: 280, hueStep: 8, m: { sway: 1 }, jitterFrom: 0 })
+  ];
+  const N = LEVELS.length;
+
+  /* sky by altitude in floors: day, golden hour, dusk, night, space */
+  const SKY = [
+    { a: 0,   top: [66, 160, 232], mid: [140, 206, 242], bot: [222, 243, 248], line: [78, 124, 182], la: 0.5,  orb: [255, 222, 89],  cloud: 0.8,  win: 0.2 },
+    { a: 14,  top: [84, 120, 214], mid: [250, 170, 130], bot: [255, 214, 150], line: [58, 58, 120],  la: 0.75, orb: [255, 238, 176], cloud: 0.42, win: 0.5 },
+    { a: 30,  top: [35, 33, 92],   mid: [168, 84, 128],  bot: [244, 160, 112], line: [22, 22, 58],   la: 0.93, orb: [255, 244, 226], cloud: 0.16, win: 0.8 },
+    { a: 55,  top: [10, 14, 52],   mid: [30, 34, 96],    bot: [92, 66, 132],   line: [14, 15, 44],   la: 0.95, orb: [255, 244, 226], cloud: 0.1,  win: 0.8 },
+    { a: 140, top: [2, 3, 12],     mid: [6, 8, 30],      bot: [16, 18, 58],    line: [10, 10, 30],   la: 1,    orb: [255, 244, 226], cloud: 0.06, win: 0.8 }
+  ];
+  const PENTA = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21, 24];
+  const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { /* storage unavailable */ } }
+  };
+  function hash(a, b) {
+    let n = (Math.imul(a | 0, 374761393) + Math.imul(b | 0, 668265263)) | 0;
+    n = Math.imul(n ^ (n >>> 13), 1274126177);
+    n ^= n >>> 16;
+    return (n >>> 0) / 4294967296;
+  }
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const fmtM = n => { const m = n * FLOOR_M; return (m % 1 ? m.toFixed(1) : String(m)) + ' m'; };
+  const ICON = n => '<svg class="ic" aria-hidden="true"><use href="#i-' + n + '"></use></svg>';
+  const STAR = on => '<svg class="st' + (on ? ' on' : '') + '" aria-hidden="true"><use href="#i-star"></use></svg>';
+  const starsHTML = n => STAR(n > 0) + STAR(n > 1) + STAR(n > 2);
+  const starsFor = p => p >= 80 ? 3 : p >= 50 ? 2 : p > 0 ? 1 : 0;
+  const cleanLv = a => LEVELS.map((_, i) => clamp(Math.round(+(Array.isArray(a) ? a[i] : 0) || 0), 0, 130));
+  const starTotal = a => a.reduce((s, p) => s + starsFor(p), 0);
+  const sum = a => a.reduce((s, p) => s + p, 0);
+
+  /* ---------- saved progress (this device) ---------- */
+  let best = clamp(Math.round(+store.get('omf.best', 0) || 0), 0, 9999);
+  let lvPct = store.get('omf.lv', null);
+  if (!Array.isArray(lvPct)) {
+    const old = store.get('omf.levels', null);           // earlier version: marks 0-3 for eight levels
+    lvPct = Array.isArray(old) ? old.map(m => m >= 3 ? 80 : m === 2 ? 50 : m === 1 ? 1 : 0) : [];
+  }
+  lvPct = cleanLv(lvPct);
+  let muted = !!store.get('omf.muted', false);
+
+  /* ---------- state ---------- */
+  let W = 0, H = 0, dpr = 1, unit = 1;
+  let mode = 'home';                        // home | levels | friends | brief | play | over
+  let game = 'endless';                     // endless | level
+  let lv = ENDLESS, L = 0, won = false;
+  let floors = [], cur = null, debris = [], sparks = [], pops = [], texts = [];
+  let score = 0, combo = 0, bestStreak = 0, perfects = 0, grow = false;
+  let time = 0, last = 0, shake = 0, overAt = 0, signShown = false, signAt = 0, toastTimer = 0;
+  let rivals = [], freshRun = null;
+  const cam = { x: 0, y: SLAB_H, zoom: 1, oy: 0, tx: 0, ty: SLAB_H, tz: 1, toy: 0 };
+
+  const hueFor = i => (lv.hue0 + i * lv.hueStep) % 360;
+  /* sway: how far piece i is pushed off its line right now */
+  const off = i => lv.m.sway ? Math.sin(time * 1.5) * Math.min(36, i * 3.2) : 0;
+
+  /* ---------- scenery, generated once ---------- */
+  const STARS = Array.from({ length: 110 }, (_, i) => ({
+    x: hash(i, 1), y: hash(i, 2), b: hash(i, 3), d: 0.4 + hash(i, 4), r: hash(i, 5) > 0.85 ? 2 : 1.2,
+    tw: 0.6 + hash(i, 6) * 1.8, p: hash(i, 7) * 6.28
+  }));
+  const SKYLINE = [], SKYWIN = [];
+  (function buildSkyline() {
+    let x = -760, i = 0;
+    while (x < 760) {
+      const w = 26 + hash(i, 11) * 46;
+      const mid = Math.abs(x + w / 2) < 120;
+      const h = mid ? 10 + hash(i, 12) * 12 : 28 + hash(i, 12) * 124;
+      SKYLINE.push({ x, w, h });
+      for (let wy = 10; wy < h - 8; wy += 12) {
+        for (let wx = 5; wx < w - 6; wx += 9) {
+          if (hash(i * 97 + wy, wx) > 0.8) SKYWIN.push({ x: x + wx, y: wy });
+        }
+      }
+      x += w + (hash(i, 13) > 0.7 ? 6 : 0);
+      i++;
+    }
+  })();
+
+  /* ---------- sound ---------- */
+  let ac = null, master = null;
+  function ensureAudio() {
+    if (!ac) {
+      try {
+        const A = window.AudioContext || window.webkitAudioContext;
+        if (!A) return;
+        ac = new A();
+        master = ac.createGain();
+        master.gain.value = 0.5;
+        master.connect(ac.destination);
+      } catch (e) { ac = null; return; }
+    }
+    if (ac.state === 'suspended') { try { ac.resume().catch(() => {}); } catch (e) { /* ignore */ } }
+  }
+  function tone(f0, f1, dur, type, vol, delay) {
+    if (muted || !ac) return;
+    try {
+      const t = ac.currentTime + (delay || 0);
+      const o = ac.createOscillator(), g = ac.createGain();
+      o.type = type;
+      o.frequency.setValueAtTime(f0, t);
+      if (f1 !== f0) o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(vol, t + 0.008);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      o.connect(g); g.connect(master);
+      o.start(t); o.stop(t + dur + 0.03);
+    } catch (e) { /* ignore */ }
+  }
+  const note = s => 392 * Math.pow(2, s / 12);
+  const sfx = {
+    tap() { tone(520, 700, 0.06, 'triangle', 0.14); },
+    place() { tone(200, 92, 0.12, 'triangle', 0.45); },
+    perfect(n) {
+      const f = 523.25 * Math.pow(2, PENTA[Math.min(n - 1, PENTA.length - 1)] / 12);
+      tone(f, f, 0.34, 'triangle', 0.36);
+      tone(f * 2, f * 2, 0.22, 'sine', 0.12);
+    },
+    release() { tone(520, 300, 0.07, 'triangle', 0.16); },
+    landmark() { [0, 4, 7, 12].forEach((s, i) => tone(note(s), note(s), 0.22, 'sine', 0.2, 0.08 + i * 0.07)); },
+    win() { [0, 4, 7, 12, 16, 19, 24].forEach((s, i) => tone(note(s), note(s), 0.3, 'triangle', 0.24, 0.1 + i * 0.08)); },
+    over() { tone(260, 52, 0.75, 'triangle', 0.42); tone(130, 40, 0.8, 'sine', 0.3, 0.05); }
+  };
+  function buzz(ms) { try { if (navigator.vibrate) navigator.vibrate(ms); } catch (e) { /* ignore */ } }
+  function paintSound() {
+    el.bSound.setAttribute('aria-pressed', String(muted));
+    el.bSound.setAttribute('aria-label', muted ? 'Sound is off. Turn sound on.' : 'Sound is on. Turn sound off.');
+    el.waves.toggleAttribute('hidden', muted);
+    el.slash.toggleAttribute('hidden', !muted);
+  }
+
+  /* ---------- friends and boards ----------
+     Local first: your username, friends and friend codes live on this device.
+     When the page has a shared store, each player also keeps one row in it (players/<their id>). */
+  const NAME_RE = /^[A-Za-z0-9_]{3,14}$/;
+  const social = { state: 'off', db: null, uid: null, players: new Map(), saving: false, dirty: false, merged: false, definitive: false };
+  let profile = store.get('omf.profile', null);
+  if (!profile || typeof profile.name !== 'string' || !NAME_RE.test(profile.name)) profile = { name: '' };
+  let friends = store.get('omf.friends', []);
+  friends = Array.isArray(friends) ? friends.filter(x => typeof x === 'string').slice(0, 200) : [];
+  let codes = store.get('omf.codes', {});
+  if (!codes || typeof codes !== 'object' || Array.isArray(codes)) codes = {};
+  let boardKind = 'endless', boardScope = 'device', scopePicked = false;
+
+  /* This device: every player who has played here, and the table of top Endless runs. All of it is localStorage. */
+  let roster = store.get('omf.roster', {});
+  if (!roster || typeof roster !== 'object' || Array.isArray(roster)) roster = {};
+  let runs = store.get('omf.runs', []);
+  runs = (Array.isArray(runs) ? runs : []).filter(r => r && typeof r.n === 'string' && (r.n === '' || NAME_RE.test(r.n)) && r.s > 0)
+    .map(r => ({ n: r.n, s: clamp(Math.round(+r.s), 1, 9999), t: +r.t || 0 }));
+  let ownerKey = store.get('omf.owner', '');          // the one player on this device whose scores also post to the live board
+  if (typeof ownerKey !== 'string') ownerKey = '';
+  const curKey = () => profile.name.toLowerCase();
+  const isOwner = () => !ownerKey || curKey() === ownerKey;
+  const sortRuns = () => { runs.sort((a, b) => b.s - a.s || a.t - b.t); runs = runs.slice(0, 20); };
+  function park() {                                    // keep the current player's row in the roster up to date
+    if (profile.name) { roster[curKey()] = { name: profile.name, best, lv: lvPct.slice() }; store.set('omf.roster', roster); }
+  }
+  function saveProgress() {
+    store.set('omf.best', best); store.set('omf.lv', lvPct); store.set('omf.profile', profile);
+    park(); saveMe();
+  }
+  function recordRun(sc) {
+    if (sc <= 0) return null;
+    const r = { n: profile.name, s: sc, t: Date.now() };
+    runs.push(r); sortRuns(); store.set('omf.runs', runs);
+    return runs.indexOf(r) >= 0 ? r : null;
+  }
+
+  /* anything read from the shared store or a pasted code is someone else's input: validate, never trust */
+  function cleanPlayer(d) {
+    if (!d || typeof d.name !== 'string' || !NAME_RE.test(d.name)) return null;
+    return { name: d.name, key: d.name.toLowerCase(), best: clamp(Math.round(+d.best || 0), 0, 9999), lv: cleanLv(d.lv),
+      friends: Array.isArray(d.friends) ? d.friends.filter(x => typeof x === 'string').slice(0, 200) : [] };
+  }
+  Object.keys(codes).forEach(k => { const p = cleanPlayer(codes[k]); if (p && p.key === k) codes[k] = p; else delete codes[k]; });
+  Object.keys(roster).forEach(k => { const p = cleanPlayer(roster[k]); if (p && p.key === k) roster[k] = { name: p.name, best: p.best, lv: p.lv }; else delete roster[k]; });
+  if (!ownerKey && profile.name) { ownerKey = curKey(); store.set('omf.owner', ownerKey); }
+  if (!runs.length && best > 0) runs.push({ n: profile.name, s: best, t: Date.now() });   // a best set before the run table existed
+  sortRuns(); park();
+
+  const payload = () => ({ name: profile.name, key: profile.name.toLowerCase(), best, lv: lvPct.slice(), stars: starTotal(lvPct), friends: friends.slice(0, 200) });
+  const sig = p => JSON.stringify([p.name, p.best, p.lv, p.friends]);
+
+  async function saveMe() {
+    if (social.state !== 'live' || !profile.name || !isOwner()) return;
+    if (social.saving) { social.dirty = true; return; }
+    social.saving = true;
+    try {
+      do {
+        social.dirty = false;
+        const p = payload(); p.t = Date.now();
+        const ref = social.db.doc('players/' + social.uid);
+        try { await ref.set(p); }
+        catch (e) {
+          if (!e || e.code !== 'unavailable') throw e;
+          await wait(500 + Math.random() * 700);
+          await ref.set(p);
+        }
+      } while (social.dirty);
+    } catch (e) {
+      if (!e || e.code !== 'unavailable') social.state = 'readonly';   // this view may read the board but not post to it
+      paintSocial();
+    } finally { social.saving = false; }
+  }
+
+  function onPlayers(snap) {
+    const m = new Map();
+    for (const d of snap.docs) { const p = cleanPlayer(d.data()); if (p) m.set(d.id, p); }
+    social.players = m;
+    if (!(snap.metadata && snap.metadata.fromCache)) social.definitive = true;
+    reconcile();
+    paintSocial();
+  }
+  /* First sight of your own live row: take the better of this device and the board, both ways.
+     Only the device's main player is tied to the live row; guests stay local. */
+  function reconcile() {
+    if (social.merged || !social.uid || !isOwner()) return;
+    const mine = social.players.get(social.uid);
+    if (mine) {
+      social.merged = true;
+      if (mine.best > best) best = mine.best;
+      lvPct = lvPct.map((p, i) => Math.max(p, mine.lv[i]));
+      const set = new Set(friends); mine.friends.forEach(f => set.add(f));
+      friends = Array.from(set).slice(0, 200); store.set('omf.friends', friends);
+      if (!profile.name && !roster[mine.key]) { profile.name = mine.name; ownerKey = mine.key; store.set('omf.owner', ownerKey); }
+      store.set('omf.best', best); store.set('omf.lv', lvPct); store.set('omf.profile', profile); park();
+      if (profile.name && sig(payload()) !== sig(mine)) saveMe();
+      if (mode === 'home') paintHome();
+      if (mode === 'levels') paintGrid();
+    } else if (social.definitive) {
+      social.merged = true;
+      saveMe();
+    }
+  }
+
+  async function initSocial() {
+    try {
+      if (!window.claude || typeof window.claude.use !== 'function') return;
+      const both = await Promise.all([window.claude.use('db'), window.claude.use('user')]);
+      const db = both[0], user = both[1];
+      if (!db) return;
+      social.db = db;
+      social.uid = user ? await user.id() : null;
+      social.state = social.uid ? 'live' : 'readonly';
+      db.collection('players').limit(500).onSnapshot(onPlayers, () => { social.state = 'off'; social.players = new Map(); paintSocial(); });
+      paintSocial();
+    } catch (e) { /* no shared store here: friend codes still work */ }
+  }
+
+  function entries(scope) {
+    const list = [{ id: 'me', name: profile.name || 'You', best, lv: lvPct, me: true }];
+    if (scope === 'device') {
+      Object.keys(roster).forEach(k => { if (k !== curKey()) list.push({ id: 'local:' + k, name: roster[k].name, best: roster[k].best, lv: roster[k].lv }); });
+      return list;
+    }
+    const seen = new Set();
+    social.players.forEach((p, id) => {
+      if (id === social.uid) return;
+      if (scope === 'all' || friends.indexOf(id) >= 0) { list.push({ id, name: p.name, best: p.best, lv: p.lv }); seen.add(p.key); }
+    });
+    if (scope === 'friends') {
+      Object.keys(codes).forEach(k => { if (!seen.has(k)) list.push({ id: 'code:' + k, name: codes[k].name, best: codes[k].best, lv: codes[k].lv, code: true }); });
+    }
+    return list;
+  }
+  /* kind: 'endless' | 'levels' | a level index */
+  function ranked(kind, scope) {
+    if (kind === 'endless' && scope === 'device') {      // the arcade table: best runs, whoever made them
+      return runs.slice(0, 10).map((r, i) => ({ id: 'run' + i, name: r.n || 'You', v: r.s, text: String(r.s), me: r.n.toLowerCase() === curKey(), tag: r === freshRun ? 'new' : '', run: r }));
+    }
+    let rows = entries(scope);
+    if (kind === 'endless') rows.forEach(r => { r.v = r.best; r.text = String(r.best); });
+    else if (kind === 'levels') rows.forEach(r => { const s = starTotal(r.lv); r.v = s * 100000 + sum(r.lv); r.text = String(s); });
+    else { rows.forEach(r => { r.v = r.lv[kind]; r.text = r.lv[kind] + '%'; }); rows = rows.filter(r => r.v > 0); }
+    return rows.sort((a, b) => b.v - a.v || (b.me ? 1 : 0) - (a.me ? 1 : 0));
+  }
+  function fillBoard(ol, rows, kind, removable) {
+    ol.textContent = '';
+    rows.forEach((r, i) => {
+      const li = document.createElement('li');
+      if (r.me) li.className = 'me';
+      const rk = document.createElement('span'); rk.className = 'rk'; rk.textContent = String(i + 1);
+      const nm = document.createElement('span'); nm.className = 'nm';
+      const b = document.createElement('b'); b.textContent = r.name; nm.appendChild(b);
+      const tag = r.tag != null ? r.tag : r.me ? 'you' : r.code ? 'code' : '';
+      if (tag) { const t = document.createElement('span'); t.className = 'tg'; t.textContent = tag; nm.appendChild(t); }
+      const vl = document.createElement('span'); vl.className = 'vl'; vl.textContent = r.text;
+      if (kind === 'levels') vl.insertAdjacentHTML('beforeend', STAR(true));
+      li.append(rk, nm, vl);
+      if (removable && !r.me) {
+        const x = document.createElement('button');
+        x.type = 'button'; x.className = 'rm'; x.dataset.rm = r.id;
+        x.setAttribute('aria-label', 'Remove ' + r.name);
+        x.innerHTML = ICON('x');
+        li.appendChild(x);
+      }
+      ol.appendChild(li);
+    });
+  }
+
+  function setMsg(node, text, cls) { node.textContent = text || ''; node.className = 'msg' + (cls ? ' ' + cls : ''); }
+
+  function paintSocial() {
+    el.hWhoText.textContent = profile.name ? 'Playing as ' + profile.name : 'Pick a username';
+    rivals = entries('friends').filter(e => !e.me && e.best > 0).sort((a, b) => a.best - b.best);
+    paintRival();
+    if (mode !== 'friends') return;
+
+    let st;
+    if (!isOwner()) st = 'This player is a guest on this device, so their scores stay on the This device board.';
+    else if (social.state === 'live') st = profile.name ? 'Live. Your scores post to the board on their own.' : 'Pick a username to join the live board.';
+    else if (social.state === 'readonly') st = 'You can see the live board here, but this link cannot post your scores. Swap friend codes instead.';
+    else st = 'The live board is not available here. Swap friend codes to compare scores.';
+    setMsg(el.netStatus, st);
+
+    /* people who added you and that you have not added back */
+    el.addedYou.textContent = '';
+    let any = false;
+    if (social.uid) social.players.forEach((p, id) => {
+      if (id === social.uid || friends.indexOf(id) >= 0 || p.friends.indexOf(social.uid) < 0) return;
+      any = true;
+      const row = document.createElement('div');
+      const s = document.createElement('span'); s.textContent = p.name + ' added you';
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'btn sm'; b.dataset.add = id; b.textContent = 'Add back';
+      row.append(s, b); el.addedYou.appendChild(row);
+    });
+    el.addedYou.hidden = !any;
+
+    /* other players saved on this device */
+    el.localList.textContent = '';
+    const others = Object.keys(roster).filter(k => k !== curKey());
+    others.forEach(k => {
+      const row = document.createElement('div');
+      const nm = document.createElement('span'); nm.textContent = roster[k].name;
+      const act = document.createElement('span'); act.className = 'do';
+      const sw = document.createElement('button'); sw.type = 'button'; sw.className = 'btn sm'; sw.dataset.sw = k; sw.textContent = 'Switch';
+      act.appendChild(sw);
+      if (k !== ownerKey) {
+        const x = document.createElement('button'); x.type = 'button'; x.className = 'rm'; x.dataset.del = k;
+        x.setAttribute('aria-label', 'Delete ' + roster[k].name + ' from this device'); x.innerHTML = ICON('x');
+        act.appendChild(x);
+      }
+      row.append(nm, act); el.localList.appendChild(row);
+    });
+    el.localList.hidden = !others.length;
+
+    const rows = ranked(boardKind, boardScope);
+    fillBoard(el.board, rows, boardKind, boardScope === 'friends');
+    let bm = '';
+    if (boardScope === 'device') bm = boardKind === 'endless'
+      ? (rows.length ? 'The ten best Endless runs made on this device.' : 'No runs yet. Finish an Endless run to get on this board.')
+      : 'Everyone who has played on this device. Add a player above to share it.';
+    else if (rows.length < 2) bm = boardScope === 'friends' ? 'Just you so far. Add a friend to start a rivalry.' : 'Nobody else is on the live board yet.';
+    setMsg(el.boardMsg, bm);
+    el.segBoard.querySelectorAll('button').forEach(b => { const on = b.dataset.board === boardKind; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+    el.segScope.querySelectorAll('button').forEach(b => { const on = b.dataset.scope === boardScope; b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); });
+  }
+
+  function saveName() {
+    const v = el.nameIn.value.trim();
+    if (!NAME_RE.test(v)) return setMsg(el.nameMsg, 'Use 3 to 14 letters, numbers or underscores.', 'bad');
+    const key = v.toLowerCase(), old = curKey();
+    if (key !== old && roster[key]) return setMsg(el.nameMsg, v + ' is already a player on this device. Use Switch below.', 'bad');
+    let taken = false;
+    if (isOwner()) social.players.forEach((p, id) => { if (id !== social.uid && p.key === key) taken = true; });
+    if (taken) return setMsg(el.nameMsg, 'Someone on the live board already has that name. Try another.', 'bad');
+    if (old && old !== key) delete roster[old];
+    runs.forEach(r => { if (r.n.toLowerCase() === old) r.n = v; });       // runs made under the old name follow the player
+    if (!ownerKey || ownerKey === old) { ownerKey = key; store.set('omf.owner', ownerKey); }
+    profile.name = v;
+    store.set('omf.runs', runs);
+    saveProgress(); reconcile();
+    setMsg(el.nameMsg, 'Saved. You are ' + v + '.', 'ok');
+    paintSocial();
+  }
+  function newPlayer() {
+    if (!profile.name) { setMsg(el.nameMsg, 'Name the current player first, so their progress is kept.', 'bad'); return; }
+    park();
+    profile = { name: '' }; best = 0; lvPct = cleanLv([]); freshRun = null;
+    store.set('omf.best', best); store.set('omf.lv', lvPct); store.set('omf.profile', profile);
+    el.nameIn.value = '';
+    setMsg(el.nameMsg, 'New player. Pick a username for them.', 'ok');
+    try { el.nameIn.focus(); } catch (e) { /* ignore */ }
+    paintSocial();
+  }
+  function switchTo(key) {
+    const p = roster[key];
+    if (!p) return;
+    if (!profile.name && (best > 0 || starTotal(lvPct) > 0)) { setMsg(el.nameMsg, 'Name the current player first, so their progress is kept.', 'bad'); return; }
+    park();
+    profile = { name: p.name }; best = p.best; lvPct = cleanLv(p.lv); freshRun = null;
+    store.set('omf.best', best); store.set('omf.lv', lvPct); store.set('omf.profile', profile);
+    el.nameIn.value = p.name;
+    setMsg(el.nameMsg, 'Now playing as ' + p.name + '.', 'ok');
+    reconcile(); paintSocial();
+  }
+  function deleteLocal(key) {
+    if (key === curKey() || key === ownerKey) return;
+    delete roster[key]; store.set('omf.roster', roster);
+    runs = runs.filter(r => r.n.toLowerCase() !== key); store.set('omf.runs', runs);
+    paintSocial();
+  }
+
+  function myCode() {
+    const raw = JSON.stringify({ n: profile.name, b: best, l: lvPct });
+    return 'OMF1.' + btoa(raw).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function readCode(c) {
+    try {
+      let b = c.slice(5).replace(/-/g, '+').replace(/_/g, '/');
+      while (b.length % 4) b += '=';
+      const o = JSON.parse(atob(b));
+      return cleanPlayer({ name: o.n, best: o.b, lv: o.l });
+    } catch (e) { return null; }
+  }
+  function addFriend() {
+    const v = el.friendIn.value.trim();
+    if (!v) return setMsg(el.friendMsg, 'Type a username, or paste a friend code.', 'bad');
+    if (v.indexOf('OMF1.') === 0) {
+      const p = readCode(v);
+      if (!p) return setMsg(el.friendMsg, 'That code did not read properly. Ask for a fresh copy.', 'bad');
+      if (profile.name && p.key === profile.name.toLowerCase()) return setMsg(el.friendMsg, 'That is your own code.', 'bad');
+      codes[p.key] = p; store.set('omf.codes', codes);
+      el.friendIn.value = '';
+      setMsg(el.friendMsg, 'Added ' + p.name + ' from a code. A code is a snapshot, so ask for a new one to update their scores.', 'ok');
+      return paintSocial();
+    }
+    if (!NAME_RE.test(v)) return setMsg(el.friendMsg, 'Usernames are 3 to 14 letters, numbers or underscores.', 'bad');
+    if (social.state === 'off') return setMsg(el.friendMsg, 'Usernames need the live board, which is not available here. Paste a friend code instead.', 'bad');
+    const key = v.toLowerCase();
+    let hit = null;
+    social.players.forEach((p, id) => { if (p.key === key) hit = { id, p }; });
+    if (!hit) return setMsg(el.friendMsg, 'Nobody called ' + v + ' is on the board yet. They need to open the game and pick that name first.', 'bad');
+    if (hit.id === social.uid) return setMsg(el.friendMsg, 'That is you.', 'bad');
+    if (friends.indexOf(hit.id) >= 0) return setMsg(el.friendMsg, hit.p.name + ' is already on your list.');
+    befriend(hit.id);
+    el.friendIn.value = '';
+    setMsg(el.friendMsg, 'Added ' + hit.p.name + '.', 'ok');
+  }
+  function befriend(id) {
+    if (friends.indexOf(id) < 0) friends.push(id);
+    store.set('omf.friends', friends);
+    saveMe(); paintSocial();
+  }
+  function unfriend(id) {
+    if (id.indexOf('code:') === 0) { delete codes[id.slice(5)]; store.set('omf.codes', codes); }
+    else { friends = friends.filter(f => f !== id); store.set('omf.friends', friends); saveMe(); }
+    paintSocial();
+  }
+  function shareCode() {
+    if (!profile.name) return setMsg(el.codeMsg, 'Pick a username first, so your code has a name on it.', 'bad');
+    const code = myCode();
+    el.codeOut.value = code; el.codeOut.hidden = false;
+    const fallback = () => { try { el.codeOut.focus(); el.codeOut.select(); } catch (e) { /* ignore */ } setMsg(el.codeMsg, 'Select the code above and copy it, then send it to a friend.'); };
+    try {
+      navigator.clipboard.writeText(code).then(() => setMsg(el.codeMsg, 'Copied. Send it to a friend to paste into Add a friend.', 'ok'), fallback);
+    } catch (e) { fallback(); }
+  }
+
+  /* ---------- screens ---------- */
+  function ui() {
+    el.home.hidden = mode !== 'home';
+    el.levels.hidden = mode !== 'levels';
+    el.friendsScr.hidden = mode !== 'friends';
+    el.brief.hidden = el.prompt.hidden = mode !== 'brief';
+    el.count.hidden = !(mode === 'play' || (mode === 'over' && !signShown));
+    el.over.hidden = !(mode === 'over' && signShown);
+    el.bBack.hidden = mode === 'home';
+    el.bRestart.hidden = !(mode === 'brief' || mode === 'play' || mode === 'over');
+    if (mode !== 'play') el.toast.hidden = true;
+    el.stamp.hidden = !(mode === 'over' && !signShown);
+    paintHud();
+  }
+  function paintHud(bump) {
+    el.num.textContent = score;
+    const lvl = game === 'level';
+    el.den.textContent = lvl ? '/' + lv.target : '';
+    el.bar.hidden = !lvl;
+    el.sub.hidden = lvl;
+    if (lvl) el.barFill.style.width = clamp(score / lv.target * 100, 0, 100) + '%';
+    else el.sub.textContent = fmtM(score) + '  ·  Best ' + Math.max(best, score);
+    paintRival();
+    if (bump && !reduced) {
+      el.big.classList.remove('bump');
+      void el.big.offsetWidth;
+      el.big.classList.add('bump');
+    }
+  }
+  function paintRival() {
+    const r = (game === 'endless' && mode === 'play') ? rivals.find(x => x.best >= score) : null;
+    el.rival.hidden = !r;
+    if (r) el.rival.textContent = 'Beat ' + r.name + ': ' + r.best;
+  }
+  function nextLevel() { return lvPct.findIndex(p => !p); }
+  function paintHome() {
+    const i = nextLevel();
+    el.hPlaySub.textContent = i < 0 ? 'Endless · best ' + best : 'Level ' + (i + 1) + ' · ' + LEVELS[i].name;
+    el.hWhoText.textContent = profile.name ? 'Playing as ' + profile.name : 'Pick a username';
+  }
+  function paintGrid() {
+    const now = nextLevel();
+    el.tally.innerHTML = STAR(true);
+    el.tally.appendChild(document.createTextNode(starTotal(lvPct) + '/' + N * 3));
+    el.grid.innerHTML = LEVELS.map((v, i) => {
+      const open = i === 0 || lvPct[i - 1] > 0, s = starsFor(lvPct[i]);
+      const cls = 'tile' + (!open ? ' locked' : i === now ? ' now' : '');
+      const label = 'Level ' + (i + 1) + ', ' + v.name + (open ? ', ' + s + ' of 3 stars' : ', locked');
+      return '<button type="button" class="' + cls + '" data-i="' + i + '" aria-label="' + label + '"' + (open ? '' : ' disabled') + '>' +
+        (open ? '<span>' + (i + 1) + '</span><span class="s">' + starsHTML(s) + '</span>' : ICON('lock')) + '</button>';
+    }).join('');
+  }
+
+  function resetTower() {
+    floors = [{ x: 0, w: lv.w0, hue: lv.m.mixed ? 205 : hueFor(0), style: lv.style, born: -9, perfect: false }];
+    debris = []; sparks = []; pops = []; texts = [];
+    score = 0; combo = 0; bestStreak = 0; perfects = 0; grow = false; shake = 0;
+    cur = null; won = false; signShown = false; freshRun = null;
+  }
+  function blurAll() { const a = document.activeElement; if (a && a !== document.body && a.blur) a.blur(); }
+
+  function showHome() {
+    game = 'endless'; lv = ENDLESS; mode = 'home';
+    resetTower(); spawn(); snapCam(); paintHome(); ui(); blurAll();
+  }
+  function showLevels() {
+    game = 'endless'; lv = ENDLESS; mode = 'levels';
+    resetTower(); spawn(); snapCam(); paintGrid(); ui(); blurAll();
+  }
+  function showFriends() {
+    game = 'endless'; lv = ENDLESS; mode = 'friends';
+    resetTower(); spawn(); snapCam();
+    el.nameIn.value = profile.name;
+    if (!scopePicked) boardScope = (friends.length || Object.keys(codes).length) ? 'friends' : 'device';
+    setMsg(el.nameMsg, ''); setMsg(el.friendMsg, ''); setMsg(el.codeMsg, ''); el.codeOut.hidden = true;
+    ui(); blurAll(); paintSocial();
+  }
+  function openLevel(i) {
+    game = 'level'; L = i; lv = LEVELS[i]; mode = 'brief';
+    resetTower(); spawn(); snapCam();
+    el.bTag.textContent = 'Level ' + (i + 1) + ' of ' + N;
+    el.bName.textContent = lv.name;
+    el.bHint.textContent = lv.hint;
+    el.bGoal.textContent = lv.target + ' ' + lv.units;
+    ui(); blurAll();
+  }
+  function beginLevel() {
+    mode = 'play';
+    resetTower(); spawn(); ui(); blurAll();
+  }
+  function startEndless() {
+    const wasSide = lv.side;
+    game = 'endless'; lv = ENDLESS; mode = 'play';
+    resetTower(); spawn();
+    if (wasSide) snapCam();
+    ui(); blurAll();
+  }
+  function restart() { if (game === 'level') beginLevel(); else startEndless(); }
+  function goBack() {
+    if (mode === 'levels' || mode === 'friends' || game === 'endless') showHome(); else showLevels();
+  }
+
+  /* ---------- pieces ---------- */
+  function spawn() {
+    const top = floors[floors.length - 1], n = floors.length - 1;
+    const demo = mode !== 'play';
+    let sp = demo ? lv.sp0 * 0.78 : Math.min(lv.sp0 + n * lv.ramp, lv.cap);
+    if (!demo && lv.jitterFrom != null && n >= lv.jitterFrom) sp *= 0.92 + Math.random() * 0.16;
+    const sd = floors.length % 2 ? 1 : -1;
+    let w = top.w, hue = hueFor(floors.length), kind = 'std';
+    if (grow) { w = Math.min(lv.w0, w + 10); grow = false; }
+    if (lv.m.mixed) {
+      const r = Math.random();
+      kind = (!demo && n === 0) ? 'std' : r < 0.34 ? 'wide' : r < 0.67 ? 'fast' : 'std';
+      if (kind === 'wide') { w = Math.min(lv.w0 + 28, w + 36); hue = 40; }
+      else if (kind === 'fast') { sp *= 1.55; hue = 2; }
+      else hue = 205;
+    }
+    cur = { x: top.x + sd * TRAVEL, w, base: w, dir: -sd, sp, ax: top.x, hue, style: lv.style, kind,
+      falling: false, ft: 0, hy: lv.m.crane ? HY : 0 };
+  }
+
+  function callout(s, x, w, y) {
+    texts.push(lv.side ? { s, x: x - w / 2 - 24, y: y + SLAB_H / 2, t: time } : { s, x, y: y + SLAB_H * 2.3, t: time });
+  }
+  function burst(x, w, y, count) {
+    if (reduced) return;
+    for (let i = 0; i < count; i++) {
+      const sd = i % 2 ? 1 : -1;
+      sparks.push(lv.side
+        ? { x: x + sd * w / 2, y: y + Math.random() * SLAB_H, vx: sd * (60 + Math.random() * 120) - 60, vy: (Math.random() - 0.5) * 150, t: 0, life: 0.45 + Math.random() * 0.3 }
+        : { x: x + sd * w / 2, y: y + Math.random() * SLAB_H, vx: sd * (30 + Math.random() * 90), vy: 40 + Math.random() * 140, t: 0, life: 0.45 + Math.random() * 0.3 });
+    }
+  }
+  function chunk(x, y, w, sgn, whole) {
+    const d = { x, y, w, hue: cur.hue, style: cur.style, r: 0, t: 0 };
+    if (lv.side) { d.vx = whole ? cur.dir * cur.sp * 0.45 : 30; d.vy = whole ? 0 : -34; d.vr = sgn * 1.5; }
+    else { d.vx = whole ? cur.dir * cur.sp * 0.45 : sgn * 46; d.vy = 0; d.vr = -sgn * (whole ? 1.3 : 1.8); }
+    debris.push(d);
+  }
+
+  function release() {
+    if (!cur || cur.falling) return;
+    if (lv.m.crane) { cur.falling = true; cur.ft = 0; sfx.release(); return; }
+    resolve();
+  }
+
+  function resolve() {
+    const n = floors.length, top = floors[n - 1], y = n * SLAB_H;
+    const topX = top.x + off(n - 1), o = off(n);
+    const dx = cur.x - topX;
+    const tol = 5 + cur.sp * 0.012 + (lv.m.crane ? 4 : 0);
+    const l = cur.x - cur.w / 2, r = cur.x + cur.w / 2;
+
+    if (Math.abs(dx) <= tol) {
+      combo++; perfects++;
+      if (combo > bestStreak) bestStreak = combo;
+      floors.push({ x: topX - o, w: cur.w, hue: cur.hue, style: cur.style, born: time, perfect: true });
+      pops.push({ x: topX, y, w: cur.w, t: time });
+      callout(combo > 1 ? 'Perfect ×' + combo : 'Perfect!', topX, cur.w, y);
+      burst(topX, cur.w, y, 12);
+      grow = combo >= 3;
+      sfx.perfect(combo);
+      buzz(12);
+    } else {
+      const nl = Math.max(l, topX - top.w / 2), nr = Math.min(r, topX + top.w / 2), ov = nr - nl;
+      if (ov <= 1.5) {
+        chunk(cur.x, y, cur.w, cur.dir, true);
+        finish(false);
+        return;
+      }
+      if (l < nl) chunk((l + nl) / 2, y, nl - l, -1, false);
+      if (r > nr) chunk((r + nr) / 2, y, r - nr, 1, false);
+      floors.push({ x: (nl + nr) / 2 - o, w: ov, hue: cur.hue, style: cur.style, born: time, perfect: false });
+      shake = Math.min(7, (cur.w - ov) * 0.14);
+      combo = 0;
+      sfx.place();
+      buzz(8);
+    }
+
+    score = floors.length - 1;
+    paintHud(true);
+    if (game === 'endless') {
+      const hit = LANDMARKS.find(m => floorsToPass(m.h) === score);
+      const passed = rivals.find(x => x.best === score - 1);
+      if (hit) { showToast('Taller than ' + hit.name); sfx.landmark(); }
+      else if (passed) { showToast('You passed ' + passed.name + '!'); sfx.landmark(); }
+    }
+    if (score >= lv.target) { finish(true); return; }
+    spawn();
+  }
+
+  /* what the game says when a run ends */
+  const SAY = {
+    lose: ['Oops!', 'Whoops!', 'Timber!', 'Nope!', 'Gravity wins!', 'Mind the gap!', 'Butterfingers!', 'Look out below!',
+      'That will buff out.', 'Not even close!', 'Well, that happened.', 'Who moved the tower?', 'Call the insurer!', 'Swing and a miss!'],
+    first: ['Missed the whole building!', 'Off to a flying start.', 'The tower was right there.', 'Warm-up round?'],
+    close: ['So close!', 'One short!', 'Agony!', 'Heartbreaker!', 'That one hurt.'],
+    sea: ['Splash!', 'Into the drink!', 'Man overboard!', 'Fish food!', 'Somebody fetch that.'],
+    crane: ['Dropped it!', 'Let go too late!', 'Who trained this crane?', 'Look out below!'],
+    fog: ['Lost in the fog!', 'Could not see that coming.', 'Fog 1, you 0.'],
+    wind: ['Blown away!', 'The wind did it.', 'Gone with the wind!'],
+    record: ['New record!', 'Sky high!', 'Personal best!', 'Top of the world!', 'They can see it from space!'],
+    nearBest: ['So close to your best!', 'Nearly a record!', 'One more go?'],
+    win3: ['Flawless!', 'Perfect build!', 'Master builder!', 'Not a brick wasted!', 'Textbook!', 'Nailed it!'],
+    win2: ['Nice work!', 'Solid!', 'Topped out!', 'Well built!', 'Looking sharp!', 'That will hold!'],
+    win1: ['Scraped through!', 'Close enough!', 'It is standing. Just.', 'Skinny but standing!', 'Do not look down!', 'Ship it!'],
+    across: ['Made it across!', 'Bridge open!', 'Land ho!'],
+    last: ['You built them all!', 'Site closed. You win!']
+  };
+  let lastSay = '';
+  function pick(list) {
+    let s;
+    do { s = list[Math.floor(Math.random() * list.length)]; } while (list.length > 1 && s === lastSay);
+    lastSay = s;
+    return s;
+  }
+  /* pool for this ending: a themed line when the level's trick caused it, otherwise the general pool */
+  function verdict(didWin, pct, newBest, oldBest) {
+    if (game === 'endless') {
+      if (newBest && score > 0) return pick(SAY.record);
+      if (score === 0) return pick(SAY.first);
+      if (oldBest > 3 && oldBest - score <= 1) return pick(SAY.nearBest);
+      return pick(SAY.lose);
+    }
+    if (didWin) {
+      if (L === N - 1) return pick(SAY.last);
+      const st = starsFor(pct);
+      if (lv.side && st < 3 && Math.random() < 0.5) return pick(SAY.across);
+      return pick(st === 3 ? SAY.win3 : st === 2 ? SAY.win2 : SAY.win1);
+    }
+    if (score === 0) return pick(SAY.first);
+    if (lv.target - score === 1) return pick(SAY.close);
+    const themed = lv.side ? SAY.sea : lv.m.crane ? SAY.crane : lv.m.fog ? SAY.fog : lv.m.sway ? SAY.wind : null;
+    return pick(themed && Math.random() < 0.6 ? themed : SAY.lose);
+  }
+  function showStamp(text, cls) {
+    el.stamp.textContent = text;
+    el.stamp.className = 'stamp outline ' + cls;
+    void el.stamp.offsetWidth;
+    el.stamp.classList.add('show');
+  }
+
+  function setStats(a, b, c) {
+    el.k1.textContent = a[0]; el.v1.textContent = a[1];
+    el.k2.textContent = b[0]; el.v2.textContent = b[1];
+    el.k3.textContent = c[0]; el.v3.textContent = c[1];
+  }
+  /* a short board on the results panel: friends if you have any, otherwise this device */
+  function miniBoard(kind) {
+    let rows = ranked(kind, 'friends');
+    if (rows.length < 2) rows = ranked(kind, 'device');
+    const min = (kind === 'endless' && rows.length && rows[0].run) ? 1 : 2;
+    if (rows.length < min) { el.oBoard.hidden = true; return; }
+    const at = rows.findIndex(r => r.run ? r.run === freshRun : r.me);
+    const keep = rows.slice(0, 3);
+    if (at > 2) keep[2] = rows[at];
+    fillBoard(el.oBoard, keep, kind, false);
+    if (at > 2) el.oBoard.lastChild.firstChild.textContent = String(at + 1);
+    el.oBoard.hidden = false;
+  }
+
+  function finish(didWin) {
+    const top = floors[floors.length - 1];
+    mode = 'over'; overAt = time; won = didWin; signShown = false;
+    if (didWin) {
+      burst(top.x + off(floors.length - 1), top.w, (floors.length - 1) * SLAB_H, 44);
+      sfx.win(); buzz(30);
+    } else {
+      shake = 9; sfx.over(); buzz(40);
+    }
+    cur = null;
+    el.oStars.hidden = true;
+    el.oRetry.hidden = true;
+    el.oSub.textContent = '';
+
+    if (game === 'endless') {
+      const newBest = score > best, oldBest = best;
+      freshRun = recordRun(score);
+      if (newBest) { best = score; saveProgress(); }
+      const say = verdict(false, 0, newBest, oldBest);
+      showStamp(say, newBest && score > 0 ? 'win' : 'lose');
+      el.oTag.textContent = newBest && score > 0 ? 'Endless · new best' : 'Endless';
+      el.oTitle.textContent = say;
+      el.oSub.textContent = (score === 0 ? 'Lobby' : 'Floor ' + score) + ' · ' + fmtM(score);
+      setStats(['Best', best], ['Perfect run', bestStreak], ['Perfects', perfects]);
+      const next = LANDMARKS.find(m => floorsToPass(m.h) > score);
+      if (score === 0) el.oNote.textContent = 'Wait until the floor is over the lobby, then tap.';
+      else if (next) {
+        const k = floorsToPass(next.h) - score;
+        el.oNote.textContent = k + (k === 1 ? ' more floor' : ' more floors') + ' and you are taller than ' + next.name + ' (' + next.h + ' m).';
+      } else el.oNote.textContent = 'Taller than anything ever built. Keep going.';
+      miniBoard('endless');
+      el.oGoText.textContent = 'Again';
+      el.oMenuIcon.setAttribute('href', '#i-home');
+      el.oMenu.setAttribute('aria-label', 'Home');
+    } else if (didWin) {
+      const pct = clamp(Math.round(top.w / lv.w0 * 100), 1, 130);
+      if (pct > lvPct[L]) { lvPct[L] = pct; saveProgress(); }
+      const nx = LEVELS[L + 1];
+      const say = verdict(true, pct);
+      showStamp(say, 'win');
+      el.oTag.textContent = 'Level ' + (L + 1) + ' · ' + lv.name + ' · done';
+      el.oTitle.textContent = say;
+      el.oStars.innerHTML = starsHTML(starsFor(pct));
+      el.oStars.setAttribute('role', 'img');
+      el.oStars.setAttribute('aria-label', starsFor(pct) + ' of 3 stars');
+      el.oStars.hidden = false;
+      setStats(['Width kept', pct + '%'], ['Perfect run', bestStreak], ['Perfects', perfects]);
+      el.oNote.textContent = nx ? 'Next up: ' + nx.name + '.' : 'That was the last level. Endless is still waiting.';
+      miniBoard(L);
+      el.oGoText.textContent = nx ? 'Next' : 'Endless';
+      el.oRetry.hidden = false;
+      el.oMenuIcon.setAttribute('href', '#i-grid');
+      el.oMenu.setAttribute('aria-label', 'All levels');
+    } else {
+      const say = verdict(false, 0);
+      showStamp(say, 'lose');
+      el.oTag.textContent = 'Level ' + (L + 1) + ' · ' + lv.name;
+      el.oTitle.textContent = say;
+      el.oSub.textContent = score + ' of ' + lv.target;
+      setStats(['To go', lv.target - score], ['Perfect run', bestStreak], ['Perfects', perfects]);
+      el.oNote.textContent = lv.hint;
+      el.oBoard.hidden = true;
+      el.oGoText.textContent = 'Retry';
+      el.oMenuIcon.setAttribute('href', '#i-grid');
+      el.oMenu.setAttribute('aria-label', 'All levels');
+    }
+    el.oGo.classList.toggle('sun', !didWin);
+    el.oGo.classList.toggle('go', didWin);
+    el.oActions.classList.toggle('two', el.oRetry.hidden);
+    ui();
+  }
+
+  function showSign() {
+    signShown = true; signAt = time;
+    ui();
+    try { el.oGo.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+  }
+  function showToast(s) {
+    el.toast.textContent = s;
+    el.toast.hidden = false;
+    el.toast.classList.remove('show');
+    void el.toast.offsetWidth;
+    el.toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.toast.hidden = true; }, 1900);
+  }
+
+  function primary() {
+    if (mode !== 'over') return;
+    if (game === 'endless') startEndless();
+    else if (!won) beginLevel();
+    else if (L < N - 1) openLevel(L + 1);
+    else startEndless();
+  }
+  function act() {
+    ensureAudio();
+    if (mode === 'brief') beginLevel();
+    else if (mode === 'play') release();
+    else if (mode === 'over' && signShown && time - signAt > 0.35) primary();
+  }
+
+  /* ---------- simulation ---------- */
+  function camTargets() {
+    const n = floors.length, top = floors[n - 1];
+    if (mode === 'over') {
+      const signTop = signShown ? el.over.offsetTop : H * 0.52;
+      if (lv.side) {
+        const len = (n + (won ? 1.6 : 0.6)) * SLAB_H;
+        cam.tz = Math.min(1, (W * 0.84) / (len * unit), (signTop * 0.7) / ((lv.w0 + 30) * unit));
+        cam.ty = (W * (AX - 0.08)) / (unit * cam.tz);
+        cam.toy = signTop * 0.56 - H * AY;
+        cam.tx = 0;
+      } else {
+        const groundPx = signShown ? Math.max(H * 0.26, signTop - 22) : H * 0.52;
+        const topPx = Math.min(H * 0.13, groundPx - 40);
+        cam.tz = Math.min(1, (groundPx - topPx) / (n * SLAB_H * unit));
+        cam.ty = (groundPx - H * ANCHOR) / (unit * cam.tz);
+        cam.toy = 0;
+        cam.tx = top.x * 0.5;
+      }
+    } else {
+      cam.tz = 1; cam.ty = n * SLAB_H; cam.tx = top.x * 0.6; cam.toy = 0;
+    }
+  }
+  function snapCam() {
+    camTargets();
+    cam.x = cam.tx; cam.y = cam.ty; cam.zoom = cam.tz; cam.oy = cam.toy;
+  }
+
+  function update(dt) {
+    if (cur) {
+      cur.x += cur.dir * cur.sp * dt;
+      if (cur.x > cur.ax + TRAVEL) { cur.x = cur.ax + TRAVEL; cur.dir = -1; }
+      else if (cur.x < cur.ax - TRAVEL) { cur.x = cur.ax - TRAVEL; cur.dir = 1; }
+      if (lv.m.pulse) cur.w = clamp(cur.base * (0.835 + 0.285 * Math.sin(time * 3.4)), 16, lv.w0);
+      if (cur.falling) {
+        cur.ft += dt;
+        const u = Math.min(1, cur.ft / FALL_T);
+        cur.hy = HY * (1 - u * u);
+        if (u >= 1) resolve();
+      }
+    }
+    const gx = lv.side ? 1 : 0, gy = lv.side ? 0 : -1;
+    for (const d of debris) { d.vx += gx * 1150 * dt; d.vy += gy * 1150 * dt; d.x += d.vx * dt; d.y += d.vy * dt; d.r += d.vr * dt; d.t += dt; }
+    if (debris.length) debris = debris.filter(d => d.t < 3);
+    for (const s of sparks) { s.vx += gx * 520 * dt; s.vy += gy * 520 * dt; s.x += s.vx * dt; s.y += s.vy * dt; s.t += dt; }
+    if (sparks.length) sparks = sparks.filter(s => s.t < s.life);
+    if (pops.length) pops = pops.filter(p => time - p.t < 0.45);
+    if (texts.length) texts = texts.filter(t => time - t.t < 0.9);
+    shake *= Math.exp(-dt * 12);
+
+    if (mode === 'over' && !signShown && time - overAt > (won ? 1.05 : 0.8)) showSign();
+
+    camTargets();
+    const a = (reduced && mode === 'over') ? 1 : 1 - Math.exp(-dt * (mode === 'over' ? 3.4 : 9));
+    cam.x += (cam.tx - cam.x) * a;
+    cam.y += (cam.ty - cam.y) * a;
+    cam.zoom += (cam.tz - cam.zoom) * a;
+    cam.oy += (cam.toy - cam.oy) * a;
+  }
+
+  /* ---------- drawing ---------- */
+  const rgb = c => 'rgb(' + c[0] + ',' + c[1] + ',' + c[2] + ')';
+  const rgba = (c, a) => 'rgba(' + c[0] + ',' + c[1] + ',' + c[2] + ',' + a.toFixed(3) + ')';
+  function skyAt(alt) {
+    let i = 0;
+    while (i < SKY.length - 2 && alt > SKY[i + 1].a) i++;
+    const A = SKY[i], B = SKY[i + 1];
+    const t = clamp((alt - A.a) / (B.a - A.a), 0, 1);
+    const mix = (p, q) => p.map((v, m) => Math.round(v + (q[m] - v) * t));
+    const num = k => A[k] + (B[k] - A[k]) * t;
+    return { top: mix(A.top, B.top), mid: mix(A.mid, B.mid), bot: mix(A.bot, B.bot), line: mix(A.line, B.line), orb: mix(A.orb, B.orb), la: num('la'), cloud: num('cloud'), win: num('win') };
+  }
+  function toScreen(x, y) {
+    const k = unit * cam.zoom;
+    return lv.side
+      ? [W * AX + (y - cam.y) * k, H * AY + cam.oy + (x - cam.x) * k]
+      : [W / 2 + (x - cam.x) * k, H * ANCHOR - (y - cam.y) * k];
+  }
+  function setWorld(shx, shy) {
+    const k = unit * cam.zoom;
+    if (lv.side) ctx.setTransform(0, dpr * k, dpr * k, 0, dpr * (W * AX - cam.y * k + shx), dpr * (H * AY + cam.oy - cam.x * k + shy));
+    else ctx.setTransform(dpr * k, 0, 0, -dpr * k, dpr * (W / 2 - cam.x * k + shx), dpr * (H * ANCHOR + cam.y * k + shy));
+  }
+
+  /* One piece. Fine detail is drawn on a shared grid so it lines up across pieces however they are trimmed. */
+  function block(style, x, y, w, hue, idx, detail) {
+    const l = x - w / 2, r = x + w / 2;
+    if (style === 'truss') {
+      const steel = 'hsl(' + hue + ' 84% 62%)';
+      ctx.fillStyle = 'rgba(22,26,58,.34)';
+      ctx.fillRect(l, y, w, SLAB_H);
+      ctx.strokeStyle = steel;
+      if (detail && w > 6) {
+        ctx.save();
+        ctx.beginPath(); ctx.rect(l, y, w, SLAB_H); ctx.clip();
+        ctx.beginPath(); ctx.lineWidth = 2.2;
+        for (let g = Math.floor(l / 22); g * 22 < r; g++) {
+          const gx = g * 22;
+          ctx.moveTo(gx, y); ctx.lineTo(gx, y + SLAB_H);
+          if ((g + idx) & 1) { ctx.moveTo(gx, y); ctx.lineTo(gx + 22, y + SLAB_H); }
+          else { ctx.moveTo(gx, y + SLAB_H); ctx.lineTo(gx + 22, y); }
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+      if (w > 4) { ctx.lineWidth = 3.2; ctx.strokeRect(l + 1.6, y + 1.6, w - 3.2, SLAB_H - 3.2); }
+      else { ctx.fillStyle = steel; ctx.fillRect(l, y, w, SLAB_H); }
+      return;
+    }
+    if (style === 'glass') {
+      ctx.fillStyle = 'rgba(170,236,246,.58)';
+      ctx.fillRect(l, y, w, SLAB_H);
+      ctx.fillStyle = 'rgba(52,120,142,.92)';
+      ctx.fillRect(l, y, w, 3);
+      ctx.fillStyle = 'rgba(244,254,255,.95)';
+      ctx.fillRect(l, y + SLAB_H - 3, w, 3);
+      if (detail) {
+        ctx.fillStyle = 'rgba(244,254,255,.6)';
+        for (let g = Math.ceil((l + 3) / 22); g * 22 < r - 3; g++) ctx.fillRect(g * 22, y + 3, 1.8, SLAB_H - 6);
+      }
+    } else if (style === 'panel') {
+      ctx.fillStyle = '#cfc9bf';
+      ctx.fillRect(l, y, w, SLAB_H);
+      ctx.fillStyle = '#8f8980';
+      ctx.fillRect(l, y, w, 4);
+      ctx.fillStyle = '#eeeae2';
+      ctx.fillRect(l, y + SLAB_H - 2.5, w, 2.5);
+      if (detail) {
+        ctx.fillStyle = '#8f8980';
+        for (let g = Math.ceil((l + 4) / 44); g * 44 < r - 4; g++) ctx.fillRect(g * 44, y + 4, 1.8, SLAB_H - 6.5);
+        if (w > 44) { ctx.fillRect(l + 10, y + SLAB_H - 10, 4, 4); ctx.fillRect(r - 14, y + SLAB_H - 10, 4, 4); }
+      }
+    } else {
+      const night = style === 'night';
+      ctx.fillStyle = night ? '#2a3068' : 'hsl(' + hue + ' 58% 60%)';
+      ctx.fillRect(l, y, w, SLAB_H);
+      ctx.fillStyle = night ? '#151938' : 'hsl(' + hue + ' 52% 40%)';      // floor plate
+      ctx.fillRect(l, y, w, 4);
+      ctx.fillStyle = night ? '#4a5398' : 'hsl(' + hue + ' 78% 80%)';      // parapet highlight
+      ctx.fillRect(l, y + SLAB_H - 2.5, w, 2.5);
+      if (detail) {
+        const dark = night ? '#161a3d' : 'hsl(' + hue + ' 44% 32%)';
+        const cut = night ? 0.74 : 0.6;
+        for (let g = Math.ceil((l + 3) / GRID); g * GRID + 7 <= r - 3; g++) {
+          ctx.fillStyle = hash(idx * 131, g) > cut ? '#ffe08a' : dark;
+          ctx.fillRect(g * GRID, y + 8, 7, 10);
+        }
+      }
+    }
+    if (detail && w > 4) {                                                  // cartoon ink line
+      ctx.strokeStyle = 'rgba(22,26,58,.92)'; ctx.lineWidth = 2;
+      ctx.strokeRect(l + 1, y + 1, w - 2, SLAB_H - 2);
+    }
+  }
+
+  function draw() {
+    if (!W || !H) return;
+    const k = unit * cam.zoom, side = lv.side;
+    const shx = reduced ? 0 : (Math.random() - 0.5) * 2 * shake;
+    const shy = reduced ? 0 : (Math.random() - 0.5) * 2 * shake;
+    const col = Math.min(W, 480);
+    const n = floors.length;
+
+    /* sky */
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const climb = side ? 0 : Math.max(0, cam.y / SLAB_H);
+    const alt = lv.alt0 + climb;
+    const sky = skyAt(alt);
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, rgb(sky.top)); g.addColorStop(0.55, rgb(sky.mid)); g.addColorStop(1, rgb(sky.bot));
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    const sa = clamp((alt - 28) / 24, 0, 1);
+    if (sa > 0.01) {
+      ctx.fillStyle = PAPER;
+      for (const s of STARS) {
+        const sy = ((s.y * H + alt * s.d * 3) % H + H) % H;
+        ctx.globalAlpha = sa * (0.35 + 0.65 * s.b) * (reduced ? 1 : 0.75 + 0.25 * Math.sin(time * s.tw + s.p));
+        ctx.fillRect(s.x * W, sy, s.r, s.r);
+      }
+      ctx.globalAlpha = 1;
+    }
+    /* sun by day, moon by night */
+    const mx = W / 2 + col * 0.29, my = H * 0.21 + climb * 1.4;
+    if (my < H + 50) {
+      ctx.fillStyle = rgba(sky.orb, 0.16); ctx.beginPath(); ctx.arc(mx, my, 40, 0, 6.2832); ctx.fill();
+      ctx.fillStyle = rgb(sky.orb); ctx.beginPath(); ctx.arc(mx, my, 21, 0, 6.2832); ctx.fill();
+      ctx.strokeStyle = 'rgba(22,26,58,.9)'; ctx.lineWidth = 2.5; ctx.stroke();
+    }
+
+    if (side) {
+      /* the sea under a sideways build */
+      const hz = H * 0.84;
+      const sg = ctx.createLinearGradient(0, hz, 0, H);
+      sg.addColorStop(0, 'rgba(46,78,160,.96)'); sg.addColorStop(1, '#141a44');
+      ctx.fillStyle = sg; ctx.fillRect(0, hz, W, H - hz);
+      ctx.fillStyle = 'rgba(22,26,58,.9)'; ctx.fillRect(0, hz - 1, W, 2.5);
+      ctx.fillStyle = rgba(sky.orb, 0.5);
+      for (let i = 0; i < 5; i++) ctx.fillRect(mx - 16 + (i % 2) * 7 + (reduced ? 0 : Math.sin(time * 1.3 + i) * 3), hz + 13 + i * 12, 30 - i * 4, 2.5);
+    } else {
+      /* clouds, drifting at just over half the tower's speed */
+      const P = 0.55;
+      ctx.setTransform(dpr * k, 0, 0, -dpr * k, dpr * (W / 2 - cam.x * P * k), dpr * (H * ANCHOR + cam.y * P * k));
+      const cLo = cam.y * P - (H * (1 - ANCHOR)) / k - 80, cHi = cam.y * P + (H * ANCHOR) / k + 80;
+      ctx.fillStyle = 'rgba(255,255,255,' + sky.cloud.toFixed(3) + ')';
+      for (let j = Math.max(0, Math.floor((cLo - 240) / 250)); 240 + j * 250 < cHi; j++) {
+        const cy = 240 + j * 250 + hash(j, 21) * 90;
+        const cx = (hash(j, 22) - 0.5) * 520 + (reduced ? 0 : Math.sin(time * 0.06 + j) * 26);
+        const sz = 46 + hash(j, 23) * 50;
+        ctx.beginPath();
+        ctx.moveTo(cx + sz * 1.5, cy);
+        ctx.ellipse(cx, cy, sz * 1.5, sz * 0.3, 0, 0, 6.2832);
+        ctx.moveTo(cx - sz * 0.6 + sz * 0.8, cy + sz * 0.2);
+        ctx.ellipse(cx - sz * 0.6, cy + sz * 0.2, sz * 0.8, sz * 0.32, 0, 0, 6.2832);
+        ctx.moveTo(cx + sz * 0.5 + sz * 0.7, cy + sz * 0.26);
+        ctx.ellipse(cx + sz * 0.5, cy + sz * 0.26, sz * 0.7, sz * 0.36, 0, 0, 6.2832);
+        ctx.fill();
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    /* wind streaks when the tower sways */
+    if (lv.m.sway && !side && !reduced) {
+      ctx.strokeStyle = 'rgba(255,250,240,.3)'; ctx.lineWidth = 2; ctx.lineCap = 'round'; ctx.beginPath();
+      for (let i = 0; i < 8; i++) {
+        const wy = hash(i, 31) * H * 0.8;
+        const wx = ((time * (240 + hash(i, 32) * 220) + hash(i, 33) * W * 2) % (W + 260)) - 130;
+        ctx.moveTo(wx, wy); ctx.lineTo(wx + 50 + hash(i, 34) * 60, wy);
+      }
+      ctx.stroke(); ctx.lineCap = 'butt';
+    }
+
+    /* world. Upright: y points up. Sideways: y points right, x points down. Piece i sits at y = i * SLAB_H. */
+    setWorld(shx, shy);
+    let yLo, yHi;
+    if (side) { yLo = cam.y - (W * AX + 20) / k; yHi = cam.y + (W * (1 - AX) + 20) / k; }
+    else { yLo = cam.y - (H * (1 - ANCHOR) + 20) / k; yHi = cam.y + (H * ANCHOR + 20) / k; }
+
+    if (side) {
+      const xTop = -lv.w0 / 2 - 26, farY = (lv.target + 1) * SLAB_H;
+      ctx.fillStyle = GROUND;
+      ctx.fillRect(xTop, -6000, 6000, 6000);
+      ctx.fillRect(xTop, farY, 6000, 6000);
+      ctx.fillStyle = '#3f8f5a';                                          // grass along both cliff tops
+      ctx.fillRect(xTop, -6000, 7, 6000);
+      ctx.fillRect(xTop, farY, 7, 6000);
+    } else if (yLo < 170) {
+      ctx.fillStyle = rgba(sky.line, sky.la);
+      for (const b of SKYLINE) ctx.fillRect(b.x, 0, b.w, b.h);
+      ctx.fillStyle = 'rgba(255,224,138,' + sky.win.toFixed(3) + ')';
+      for (const w of SKYWIN) ctx.fillRect(w.x, w.y, 3, 4);
+      ctx.fillStyle = GROUND;
+      ctx.fillRect(-6000, -6000, 12000, 6000);
+      ctx.fillStyle = '#3f8f5a';                                          // a strip of grass along the street
+      ctx.fillRect(-6000, -7, 12000, 7);
+    }
+
+    /* the height a level is finished at */
+    if (game === 'level' && !side) {
+      const gy = (lv.target + 1) * SLAB_H;
+      if (gy > yLo && gy < yHi) {
+        ctx.strokeStyle = 'rgba(22,26,58,.75)'; ctx.lineWidth = 3;
+        ctx.setLineDash([9, 8]);
+        ctx.beginPath(); ctx.moveTo(-150, gy); ctx.lineTo(150, gy); ctx.stroke();
+        ctx.strokeStyle = PAPER; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(-150, gy); ctx.lineTo(150, gy); ctx.stroke();
+        ctx.setLineDash([]);
+      }
+    }
+
+    const detail = k > 0.42;
+    const i0 = Math.max(0, Math.floor(yLo / SLAB_H) - 1), i1 = Math.min(n - 1, Math.ceil(yHi / SLAB_H));
+    for (let i = i0; i <= i1; i++) {
+      const f = floors[i], fx = f.x + off(i);
+      block(f.style, fx, i * SLAB_H, f.w, f.hue, i, detail);
+      const fl = 1 - (time - f.born) / 0.24;
+      if (fl > 0) {
+        ctx.fillStyle = 'rgba(255,255,255,' + (fl * (f.perfect ? 0.85 : 0.45)).toFixed(3) + ')';
+        ctx.fillRect(fx - f.w / 2, i * SLAB_H, f.w, SLAB_H);
+      }
+    }
+    for (const p of pops) {
+      const e = (time - p.t) / 0.45, gr = e * 16;
+      ctx.strokeStyle = 'rgba(255,250,240,' + (1 - e).toFixed(3) + ')';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(p.x - p.w / 2 - gr, p.y - gr * 0.5, p.w + gr * 2, SLAB_H + gr);
+    }
+
+    if (cur) {
+      const cy = n * SLAB_H + cur.hy;
+      if (lv.m.crane) {
+        ctx.strokeStyle = 'rgba(22,26,58,.9)'; ctx.lineWidth = 2; ctx.beginPath();
+        const hookY = n * SLAB_H + HY + SLAB_H + 34;
+        ctx.moveTo(cur.x, hookY); ctx.lineTo(cur.x, hookY + 2000);
+        if (!cur.falling) {
+          ctx.moveTo(cur.x - cur.w * 0.32, cy + SLAB_H); ctx.lineTo(cur.x, hookY);
+          ctx.lineTo(cur.x + cur.w * 0.32, cy + SLAB_H);
+        }
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(22,26,58,.9)'; ctx.fillRect(cur.x - 3.5, hookY - 3.5, 7, 7);
+      }
+      let a = 1;
+      if (lv.m.fog) a = clamp((Math.abs(cur.x - cur.ax) - 50) / 55, 0, 1);
+      if (a > 0.005) {
+        ctx.globalAlpha = a;
+        block(cur.style, cur.x, cy, cur.w, cur.hue, n, detail);
+        ctx.globalAlpha = 1;
+      }
+      if (lv.m.fog) {
+        const fg = ctx.createLinearGradient(cur.ax - 112, 0, cur.ax + 112, 0);
+        fg.addColorStop(0, 'rgba(232,232,248,0)'); fg.addColorStop(0.3, 'rgba(232,232,248,.52)');
+        fg.addColorStop(0.7, 'rgba(232,232,248,.52)'); fg.addColorStop(1, 'rgba(232,232,248,0)');
+        ctx.fillStyle = fg;
+        ctx.fillRect(cur.ax - 112, cy - 7, 224, SLAB_H + 36);
+        ctx.fillRect(cur.ax - 112, cy + 3, 224, SLAB_H + 6);
+      }
+    }
+
+    for (const d of debris) {
+      ctx.save();
+      ctx.translate(d.x, d.y + SLAB_H / 2);
+      ctx.rotate(d.r);
+      ctx.globalAlpha = Math.max(0, 1 - d.t / 2.4);
+      block(d.style, 0, -SLAB_H / 2, d.w, d.hue, 0, false);
+      ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+    for (const s of sparks) {
+      ctx.fillStyle = 'rgba(255,207,63,' + (1 - s.t / s.life).toFixed(3) + ')';
+      ctx.fillRect(s.x - 2, s.y - 2, 4, 4);
+    }
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    /* floating call-outs, in screen space */
+    if (texts.length) {
+      ctx.textAlign = 'center'; ctx.lineJoin = 'round';
+      ctx.font = '400 ' + Math.round(27 * clamp(unit, 0.8, 1.25)) + 'px "Lilita One","Arial Rounded MT Bold","Trebuchet MS",sans-serif';
+      for (const t of texts) {
+        const e = (time - t.t) / 0.9;
+        const p = toScreen(t.x, t.y), sx = p[0], sy = p[1] - e * 34;
+        ctx.globalAlpha = Math.min(1, 1.8 * (1 - e));
+        ctx.strokeStyle = INK; ctx.lineWidth = 6; ctx.strokeText(t.s.toUpperCase(), sx, sy + 2);
+        ctx.strokeText(t.s.toUpperCase(), sx, sy);
+        ctx.fillStyle = PAPER; ctx.fillText(t.s.toUpperCase(), sx, sy);
+      }
+      ctx.globalAlpha = 1;
+    }
+    /* menus sit on a dimmed scene */
+    if (mode === 'levels' || mode === 'friends') { ctx.fillStyle = 'rgba(22,26,58,.5)'; ctx.fillRect(0, 0, W, H); }
+  }
+
+  /* ---------- loop, sizing, input ---------- */
+  function resize() {
+    const r = stage.getBoundingClientRect();
+    W = r.width; H = r.height;
+    if (!W || !H) return;
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+    unit = Math.min(W, 480) / VIEW_W;
+    if (mode !== 'over') snapCam();
+    draw();
+  }
+  function frame(ts) {
+    const now = ts / 1000;
+    const dt = Math.min(0.034, Math.max(0, now - last) || 0.016);
+    last = now; time += dt;
+    update(dt);
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  stage.addEventListener('pointerdown', e => {
+    if (e.target.closest && e.target.closest('button, input, .screen')) return;
+    e.preventDefault();
+    act();
+  });
+  stage.addEventListener('contextmenu', e => { if (!(e.target.closest && e.target.closest('input'))) e.preventDefault(); });
+  window.addEventListener('keydown', e => {
+    const t = e.target, tag = t && t.tagName;
+    if (tag === 'INPUT') {
+      if (e.key === 'Enter') { if (t === el.nameIn) saveName(); else if (t === el.friendIn) addFriend(); }
+      return;
+    }
+    if (e.code === 'Escape' && mode !== 'home') { goBack(); return; }
+    if (e.repeat) return;
+    if (e.code === 'KeyR' && (mode === 'play' || mode === 'over' || mode === 'brief')) { restart(); return; }
+    if (e.code !== 'Space' && e.code !== 'Enter' && e.code !== 'ArrowDown') return;
+    if (tag === 'BUTTON') return;
+    e.preventDefault();
+    act();
+  });
+  const on = (node, fn) => node.addEventListener('click', () => { ensureAudio(); sfx.tap(); fn(); });
+  on(el.oGo, primary);
+  on(el.oRetry, () => { if (mode === 'over') beginLevel(); });
+  on(el.oMenu, () => { if (mode === 'over') goBack(); });
+  on(el.bBack, goBack);
+  on(el.bRestart, restart);
+  on(el.hPlay, () => { const i = nextLevel(); if (i < 0) startEndless(); else openLevel(i); });
+  on(el.hLevels, showLevels);
+  on(el.hEndless, startEndless);
+  on(el.hFriends, showFriends);
+  on(el.hWho, showFriends);
+  on(el.nameSave, saveName);
+  on(el.friendAdd, addFriend);
+  on(el.codeBtn, shareCode);
+  on(el.newPlayer, newPlayer);
+  el.localList.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('button');
+    if (!b) return;
+    if (b.dataset.sw) switchTo(b.dataset.sw); else if (b.dataset.del) deleteLocal(b.dataset.del);
+  });
+  el.grid.addEventListener('click', e => {
+    const b = e.target.closest && e.target.closest('.tile');
+    if (!b || b.disabled) return;
+    ensureAudio(); sfx.tap();
+    openLevel(+b.dataset.i);
+  });
+  el.segBoard.addEventListener('click', e => { const b = e.target.closest('button'); if (b) { boardKind = b.dataset.board; paintSocial(); } });
+  el.segScope.addEventListener('click', e => { const b = e.target.closest('button'); if (b) { boardScope = b.dataset.scope; scopePicked = true; paintSocial(); } });
+  el.board.addEventListener('click', e => { const b = e.target.closest && e.target.closest('.rm'); if (b) unfriend(b.dataset.rm); });
+  el.addedYou.addEventListener('click', e => { const b = e.target.closest && e.target.closest('button'); if (b) befriend(b.dataset.add); });
+  el.bSound.addEventListener('click', () => {
+    muted = !muted;
+    store.set('omf.muted', muted);
+    paintSound();
+    if (!muted) { ensureAudio(); tone(660, 660, 0.12, 'sine', 0.2); }
+  });
+  window.addEventListener('resize', resize);
+
+  function boot(data) {
+    if (data && typeof data.best === 'number' && data.best > best) best = clamp(Math.round(data.best), 0, 9999);
+    if (data && Array.isArray(data.lv)) { const c = cleanLv(data.lv); lvPct = lvPct.map((p, i) => Math.max(p, c[i])); }
+    paintSound();
+    showHome();
+    resize();
+    requestAnimationFrame(frame);
+    initSocial();
+  }
+  try { window.claude?.hot?.snapshot?.(() => ({ best, lv: lvPct })); } catch (e) { /* not in a viewer */ }
+  if (window.claude?.hot?.ready) window.claude.hot.ready(boot);
+  else boot(window.claude?.hot?.data ?? {});
+})();
+</script>
+
+</body></html>

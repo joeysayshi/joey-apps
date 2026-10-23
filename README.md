@@ -7,7 +7,7 @@ Beta builds of the apps I make. Download one, try it, and tell me what breaks.
 | Hand Mouse Controller | macOS 14+ | `hand-mouse-controller-v0.1` |
 | Morning Brief | macOS 14+ | `morning-brief-v0.1` |
 | DeskWatch | iPhone + Mac | coming soon |
-| One More Floor | Browser | `one-more-floor-v0.1` |
+| One More Floor | Browser | [Play now](https://joeysayshi.github.io/joey-apps/one-more-floor/) |
 
 ## How to install (Mac apps)
 
