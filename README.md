@@ -5,7 +5,6 @@ Beta builds of the apps I make. Download one, try it, and tell me what breaks.
 | App | Platform | Get it |
 |---|---|---|
 | Life Dashboard | macOS 14+ | [Download v0.1](https://github.com/joeysayshi/joey-apps/raw/main/downloads/LifeDashboard-v0.1.dmg) |
-| DeskWatch | iPhone + Mac | coming soon |
 | One More Floor | Browser | [Play now](https://joeysayshi.github.io/joey-apps/one-more-floor/) |
 
 ## Web projects
