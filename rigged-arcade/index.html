@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rigged Arcade</title>
+<style>
+  :root{
+    --bg: #14201f;
+    --line: rgba(244,239,226,0.12);
+    --cream: #f2ede1;
+    --brass: #c9a227;
+    --coral: #e2572c;
+    --sage: #7fa37a;
+    --dim: rgba(242,237,225,.55);
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; min-height:100%;
+    background: radial-gradient(1000px 500px at 50% -10%, #223634 0%, var(--bg) 55%);
+    color:var(--cream);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Arial,sans-serif;
+    display:flex; justify-content:center;
+  }
+  .wrap{ width:100%; max-width:480px; padding:26px 18px 36px; }
+  button{ font-family:inherit; }
+
+  h1{ font-size:20px; margin:0 0 2px; text-align:center; }
+  h1 span{ color:var(--brass); }
+  .sub{ text-align:center; font-size:12.5px; color:var(--dim); margin:0 0 18px; }
+
+  /* Menu */
+  .menu-cards{ display:flex; flex-direction:column; gap:12px; margin-top:22px; }
+  .menu-card{
+    display:flex; align-items:center; gap:14px;
+    background: rgba(0,0,0,.2); border:1px solid var(--line); border-radius:14px;
+    padding:16px; cursor:pointer; text-align:left; color:var(--cream);
+    transition: border-color .15s ease, transform .08s ease;
+  }
+  .menu-card:hover{ border-color: var(--brass-dim, #8a7020); }
+  .menu-card:active{ transform: scale(.98); }
+  .menu-card .ic{ font-size:30px; flex-shrink:0; }
+  .menu-card .tt{ font-size:15px; font-weight:700; }
+  .menu-card .dd{ font-size:12px; color:var(--dim); margin-top:2px; }
+
+  /* Shared game header / camera */
+  .game-top{ display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .back-btn{
+    background: rgba(0,0,0,.25); border:1px solid var(--line); color:var(--cream);
+    border-radius:10px; padding:8px 12px; font-size:12.5px; cursor:pointer;
+  }
+  .game-title{ font-size:13px; font-weight:700; color:var(--dim); letter-spacing:.04em; text-transform:uppercase; }
+
+  .cam{
+    position:relative; border-radius:16px; overflow:hidden;
+    background:#000; aspect-ratio:4/3;
+    box-shadow: 0 16px 40px rgba(0,0,0,.4);
+    margin-bottom:14px;
+  }
+  video{ width:100%; height:100%; object-fit:cover; transform:scaleX(-1); }
+  .badge{
+    position:absolute; top:10px; left:10px;
+    background:rgba(0,0,0,.5); backdrop-filter:blur(2px);
+    border:1px solid var(--line); border-radius:20px;
+    padding:5px 12px; font-size:11.5px; letter-spacing:.03em;
+    display:flex; align-items:center; gap:6px;
+  }
+  .badge .ic{ font-size:15px; }
+  .camMsg{
+    position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+    text-align:center; font-size:13px; color:var(--dim); padding:24px; line-height:1.6;
+  }
+
+  .foot{ text-align:center; font-size:11px; color:rgba(242,237,225,.35); margin-top:16px; line-height:1.6; }
+
+  /* Massive reveal popup (RPS) */
+  .overlay{
+    position:fixed; inset:0; z-index:50;
+    display:flex; align-items:center; justify-content:center;
+    background: rgba(10,15,14,0);
+    backdrop-filter: blur(0px);
+    pointer-events:none;
+    transition: background .18s ease, backdrop-filter .18s ease;
+  }
+  .overlay.show{
+    background: rgba(10,15,14,.72);
+    backdrop-filter: blur(6px);
+  }
+  .overlay-card{
+    text-align:center;
+    transform: scale(.7);
+    opacity:0;
+    transition: transform .22s cubic-bezier(.2,1.4,.4,1), opacity .18s ease;
+  }
+  .overlay.show .overlay-card{ transform: scale(1); opacity:1; }
+  .overlay-hands{
+    display:flex; align-items:center; justify-content:center; gap:28px;
+    margin-bottom:14px;
+  }
+  .overlay-hands .hand-big{ font-size:110px; line-height:1; filter: drop-shadow(0 10px 24px rgba(0,0,0,.5)); }
+  .overlay-result{ font-size:26px; font-weight:800; color: var(--coral); letter-spacing:.02em; }
+
+  /* Paper.io board */
+  .board-wrap{ display:flex; justify-content:center; margin-bottom:12px; }
+  #board{ border-radius:10px; box-shadow:0 12px 30px rgba(0,0,0,.4); background:#0d1615; }
+  .territory-bar{
+    display:flex; height:10px; border-radius:6px; overflow:hidden; margin-bottom:8px;
+    border:1px solid var(--line);
+  }
+  .territory-bar .p{ background:var(--sage); }
+  .territory-bar .n{ background:rgba(255,255,255,.06); flex:1; }
+  .territory-bar .b{ background:var(--coral); }
+  .territory-labels{
+    display:flex; justify-content:space-between; font-size:11.5px; color:var(--dim); margin-bottom:16px;
+  }
+  .territory-labels .you{ color:var(--sage); font-weight:700; }
+  .territory-labels .house{ color:var(--coral); font-weight:700; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- MENU -->
+  <div id="menuScreen">
+    <h1>Rigged <span>Arcade</span></h1>
+    <p class="sub">Two games. Both are watching you closer than you think.</p>
+    <div class="menu-cards">
+      <button class="menu-card" id="toRPS">
+        <div class="ic">✊</div>
+        <div>
+          <div class="tt">Rock Paper Rigged</div>
+          <div class="dd">Throw a hand shape. It always throws the counter.</div>
+        </div>
+      </button>
+      <button class="menu-card" id="toPaperio">
+        <div class="ic">🧠</div>
+        <div>
+          <div class="tt">Head.io</div>
+          <div class="dd">Steer with your head. Claim territory, cut off the house.</div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- SHARED GAME HEADER + CAMERA -->
+  <div id="gameHeader" style="display:none">
+    <div class="game-top">
+      <button class="back-btn" id="backBtn">← Menu</button>
+      <span class="game-title" id="gameTitle"></span>
+    </div>
+    <div class="cam">
+      <video id="video" autoplay playsinline muted></video>
+      <div class="badge"><span class="ic" id="badgeIcon">👀</span><span id="badgeText">reading…</span></div>
+      <div class="camMsg" id="camMsg"></div>
+    </div>
+  </div>
+
+  <!-- RPS SCREEN (popup handles all visuals) -->
+  <div id="rpsScreen" style="display:none">
+    <p class="foot" style="margin-top:0">Just switch your hand shape whenever you want to throw again.</p>
+  </div>
+
+  <!-- PAPER.IO SCREEN -->
+  <div id="paperioScreen" style="display:none">
+    <div class="board-wrap">
+      <canvas id="board" width="400" height="400"></canvas>
+    </div>
+    <div class="territory-bar">
+      <div class="p" id="barYou" style="width:20%"></div>
+      <div class="n"></div>
+      <div class="b" id="barHouse" style="width:20%"></div>
+    </div>
+    <div class="territory-labels">
+      <span class="you" id="pctYou">You 20%</span>
+      <span class="house" id="pctHouse">House 20%</span>
+    </div>
+    <p class="foot" style="margin-top:0">Tilt your head to steer. Leave your territory to draw a wall, come back to seal it. Don't cross your own trail.</p>
+  </div>
+
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlay-card">
+    <div class="overlay-hands">
+      <div class="hand-big" id="houseHand">–</div>
+    </div>
+    <div class="overlay-result" id="result"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/face_detection.js" crossorigin="anonymous"></script>
+<script>
+(function(){
+  // ---------- shared elements ----------
+  const menuScreen = document.getElementById('menuScreen');
+  const gameHeader = document.getElementById('gameHeader');
+  const rpsScreen = document.getElementById('rpsScreen');
+  const paperioScreen = document.getElementById('paperioScreen');
+  const gameTitle = document.getElementById('gameTitle');
+  const backBtn = document.getElementById('backBtn');
+  const toRPS = document.getElementById('toRPS');
+  const toPaperio = document.getElementById('toPaperio');
+
+  const video = document.getElementById('video');
+  const camMsg = document.getElementById('camMsg');
+  const badgeIcon = document.getElementById('badgeIcon');
+  const badgeText = document.getElementById('badgeText');
+
+  let currentView = 'menu';
+  let cameraStarted = false;
+
+  function showCamError(msg){
+    camMsg.style.display = 'flex';
+    camMsg.textContent = msg;
+    video.style.display = 'none';
+  }
+
+  async function ensureCamera(){
+    if(cameraStarted) return;
+    cameraStarted = true;
+    try{
+      const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false });
+      video.srcObject = stream;
+      await video.play();
+      requestAnimationFrame(frameLoop);
+    }catch(e){
+      showCamError("Couldn't access the camera. Check permissions and reload.");
+    }
+  }
+
+  async function frameLoop(){
+    try{
+      if(currentView === 'rps' && handsReady){
+        await hands.send({ image: video });
+      } else if(currentView === 'paperio' && faceReady){
+        await faceDetection.send({ image: video });
+      }
+    }catch(e){ /* ignore transient frame errors */ }
+    requestAnimationFrame(frameLoop);
+  }
+
+  function showScreen(view){
+    currentView = view;
+    menuScreen.style.display = view === 'menu' ? 'block' : 'none';
+    gameHeader.style.display = view === 'menu' ? 'none' : 'block';
+    rpsScreen.style.display = view === 'rps' ? 'block' : 'none';
+    paperioScreen.style.display = view === 'paperio' ? 'block' : 'none';
+
+    if(view !== 'rps'){ overlay.classList.remove('show'); rpsBusy = false; rpsHistory = []; }
+    if(view === 'paperio'){ initPaperio(); startPaperioLoop(); } else { stopPaperioLoop(); }
+
+    if(view === 'rps'){ gameTitle.textContent = 'Rock Paper Rigged'; badgeText.textContent = 'reading…'; ensureCamera(); }
+    if(view === 'paperio'){ gameTitle.textContent = 'Head.io'; badgeText.textContent = 'reading…'; ensureCamera(); }
+  }
+
+  toRPS.addEventListener('click', ()=> showScreen('rps'));
+  toPaperio.addEventListener('click', ()=> showScreen('paperio'));
+  backBtn.addEventListener('click', ()=> showScreen('menu'));
+
+  // ---------- Rock Paper Rigged ----------
+  const overlay = document.getElementById('overlay');
+  const houseHand = document.getElementById('houseHand');
+  const result = document.getElementById('result');
+
+  const ICONS = { rock:'✊', paper:'✋', scissors:'✌️' };
+  const BEATS = { rock:'scissors', paper:'rock', scissors:'paper' };
+
+  let rpsHistory = [];
+  const RPS_BUFFER_LEN = 2;
+  let rpsBusy = false;
+
+  function dist(a,b){ return Math.hypot(a.x-b.x, a.y-b.y); }
+
+  function classifyHand(lm){
+    const wrist = lm[0];
+    const extended = (tip, pip) => dist(lm[tip], wrist) > dist(lm[pip], wrist) * 1.08;
+    const index = extended(8,6), middle = extended(12,10), ring = extended(16,14), pinky = extended(20,18);
+    const count = [index, middle, ring, pinky].filter(Boolean).length;
+    if(count === 0) return 'rock';
+    if(count === 2 && index && middle && !ring && !pinky) return 'scissors';
+    if(count >= 3) return 'paper';
+    return null;
+  }
+
+  function houseThrow(userThrow){
+    for(const [k,v] of Object.entries(BEATS)) if(v === userThrow) return k;
+    return 'rock';
+  }
+
+  function playRpsRound(userMove){
+    rpsBusy = true;
+    const house = houseThrow(userMove);
+    requestAnimationFrame(()=>{
+      houseHand.textContent = ICONS[house];
+      result.textContent = house.charAt(0).toUpperCase() + house.slice(1);
+      overlay.classList.add('show');
+      setTimeout(()=>{
+        overlay.classList.remove('show');
+        rpsBusy = false;
+      }, 2000);
+    });
+  }
+
+  function handleRpsGesture(gesture){
+    if(!rpsBusy){
+      badgeIcon.textContent = gesture ? ICONS[gesture] : '👀';
+      badgeText.textContent = gesture ? `looks like ${gesture}…` : 'reading…';
+    }
+    if(rpsBusy) return;
+    rpsHistory.push(gesture);
+    if(rpsHistory.length > RPS_BUFFER_LEN) rpsHistory.shift();
+    if(rpsHistory.length === RPS_BUFFER_LEN && rpsHistory.every(g => g && g === rpsHistory[0])){
+      const move = rpsHistory[0];
+      rpsHistory = [];
+      playRpsRound(move);
+    }
+  }
+
+  let handsReady = false;
+  const hands = new Hands({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}` });
+  hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.7, minTrackingConfidence: 0.6 });
+  hands.onResults((results)=>{
+    let gesture = null;
+    if(results.multiHandLandmarks && results.multiHandLandmarks.length > 0){
+      gesture = classifyHand(results.multiHandLandmarks[0]);
+    }
+    handleRpsGesture(gesture);
+  });
+  handsReady = true;
+
+  // ---------- Head.io (paper.io clone, head-steered) ----------
+  const boardCanvas = document.getElementById('board');
+  const ctx = boardCanvas.getContext('2d');
+  const barYou = document.getElementById('barYou');
+  const barHouse = document.getElementById('barHouse');
+  const pctYou = document.getElementById('pctYou');
+  const pctHouse = document.getElementById('pctHouse');
+
+  const GRID_W = 40, GRID_H = 40, CELL = 10;
+  const DIRS = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] };
+  const OPP = { up:'down', down:'up', left:'right', right:'left' };
+  const COLORS = {
+    0: '#101c1b',
+    1: '#7fa37a', 2: '#a9c9a4',
+    3: '#e2572c', 4: '#f0958a'
+  };
+
+  let grid, player, bot, paperioTimer, desiredDir;
+
+  function idx(x,y){ return y*GRID_W + x; }
+  function inBounds(x,y){ return x>=0 && y>=0 && x<GRID_W && y<GRID_H; }
+
+  function initPaperio(){
+    grid = new Uint8Array(GRID_W*GRID_H);
+    for(let y=1;y<=4;y++) for(let x=1;x<=4;x++) grid[idx(x,y)] = 1;
+    for(let y=GRID_H-5;y<=GRID_H-2;y++) for(let x=GRID_W-5;x<=GRID_W-2;x++) grid[idx(x,y)] = 3;
+
+    player = { x:2, y:2, dir:'right', defaultDir:'right', home:[2,2], trail:[], territoryVal:1, trailVal:2 };
+    bot = { x:GRID_W-4, y:GRID_H-4, dir:'left', defaultDir:'left', home:[GRID_W-4,GRID_H-4], trail:[], territoryVal:3, trailVal:4 };
+    desiredDir = null;
+    drawBoard();
+    updateHud();
+  }
+
+  function respawn(entity){
+    entity.trail.forEach(([x,y]) => { if(grid[idx(x,y)] === entity.trailVal) grid[idx(x,y)] = 0; });
+    entity.trail = [];
+    entity.x = entity.home[0]; entity.y = entity.home[1];
+    entity.dir = entity.defaultDir;
+  }
+
+  function claimTerritory(entity){
+    entity.trail.forEach(([x,y]) => { grid[idx(x,y)] = entity.territoryVal; });
+    const visited = new Uint8Array(GRID_W*GRID_H);
+    const stack = [];
+    function tryPush(x,y){
+      if(inBounds(x,y) && !visited[idx(x,y)] && grid[idx(x,y)] !== entity.territoryVal){
+        visited[idx(x,y)] = 1; stack.push([x,y]);
+      }
+    }
+    for(let x=0;x<GRID_W;x++){ tryPush(x,0); tryPush(x,GRID_H-1); }
+    for(let y=0;y<GRID_H;y++){ tryPush(0,y); tryPush(GRID_W-1,y); }
+    while(stack.length){
+      const [cx,cy] = stack.pop();
+      tryPush(cx+1,cy); tryPush(cx-1,cy); tryPush(cx,cy+1); tryPush(cx,cy-1);
+    }
+    for(let i=0;i<grid.length;i++){
+      if(grid[i] !== entity.territoryVal && !visited[i]) grid[i] = entity.territoryVal;
+    }
+    entity.trail = [];
+  }
+
+  function stepEntity(entity, other){
+    const d = DIRS[entity.dir];
+    const nx = entity.x + d[0], ny = entity.y + d[1];
+    if(!inBounds(nx,ny)){ respawn(entity); return; }
+    const cellVal = grid[idx(nx,ny)];
+
+    if(cellVal === entity.trailVal){ respawn(entity); return; }
+    if(cellVal === other.trailVal){ respawn(other); grid[idx(nx,ny)] = 0; }
+
+    entity.x = nx; entity.y = ny;
+
+    if(cellVal === entity.territoryVal){
+      if(entity.trail.length > 0) claimTerritory(entity);
+    } else {
+      grid[idx(nx,ny)] = entity.trailVal;
+      entity.trail.push([nx,ny]);
+    }
+  }
+
+  function pickDirTowards(x,y,hx,hy,curDir){
+    const dx = hx-x, dy = hy-y;
+    const choice = Math.abs(dx) > Math.abs(dy) ? (dx>0?'right':'left') : (dy>0?'down':'up');
+    return choice === OPP[curDir] ? curDir : choice;
+  }
+
+  function botThink(){
+    if(bot.trail.length > 22 || Math.random() < 0.05){
+      bot.dir = pickDirTowards(bot.x, bot.y, bot.home[0], bot.home[1], bot.dir);
+    } else if(Math.random() < 0.15){
+      const options = Object.keys(DIRS).filter(d => d !== OPP[bot.dir]);
+      bot.dir = options[Math.floor(Math.random()*options.length)];
+    }
+  }
+
+  function updatePlayerDir(){
+    if(desiredDir && desiredDir !== OPP[player.dir]) player.dir = desiredDir;
+  }
+
+  function drawBoard(){
+    for(let y=0;y<GRID_H;y++){
+      for(let x=0;x<GRID_W;x++){
+        ctx.fillStyle = COLORS[grid[idx(x,y)]];
+        ctx.fillRect(x*CELL, y*CELL, CELL, CELL);
+      }
+    }
+    ctx.fillStyle = '#f2ede1';
+    ctx.beginPath(); ctx.arc(player.x*CELL+CELL/2, player.y*CELL+CELL/2, CELL*0.45, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(bot.x*CELL+CELL/2, bot.y*CELL+CELL/2, CELL*0.45, 0, Math.PI*2); ctx.fill();
+  }
+
+  function updateHud(){
+    let p=0,b=0;
+    for(let i=0;i<grid.length;i++){ if(grid[i]===1) p++; else if(grid[i]===3) b++; }
+    const total = GRID_W*GRID_H;
+    const pPct = Math.round((p/total)*100), bPct = Math.round((b/total)*100);
+    barYou.style.width = pPct + '%';
+    barHouse.style.width = bPct + '%';
+    pctYou.textContent = `You ${pPct}%`;
+    pctHouse.textContent = `House ${bPct}%`;
+  }
+
+  function paperioTick(){
+    updatePlayerDir();
+    botThink();
+    stepEntity(player, bot);
+    stepEntity(bot, player);
+    drawBoard();
+    updateHud();
+  }
+
+  function startPaperioLoop(){
+    stopPaperioLoop();
+    paperioTimer = setInterval(paperioTick, 130);
+  }
+  function stopPaperioLoop(){
+    if(paperioTimer){ clearInterval(paperioTimer); paperioTimer = null; }
+  }
+
+  let faceReady = false;
+  const DEADZONE = 0.055;
+  const faceDetection = new FaceDetection({ locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_detection/${file}` });
+  faceDetection.setOptions({ model: 'short', minDetectionConfidence: 0.5 });
+  faceDetection.onResults((results)=>{
+    if(!results.detections || results.detections.length === 0){
+      badgeIcon.textContent = '👀';
+      badgeText.textContent = 'find your face…';
+      return;
+    }
+    const box = results.detections[0].boundingBox;
+    const mirroredX = 1 - box.xCenter;
+    const dx = mirroredX - 0.5;
+    const dy = box.yCenter - 0.5;
+
+    let dir = null;
+    if(Math.abs(dx) > Math.abs(dy)){
+      if(Math.abs(dx) > DEADZONE) dir = dx > 0 ? 'right' : 'left';
+    } else {
+      if(Math.abs(dy) > DEADZONE) dir = dy > 0 ? 'down' : 'up';
+    }
+    if(dir){ desiredDir = dir; badgeIcon.textContent = { up:'⬆️', down:'⬇️', left:'⬅️', right:'➡️' }[dir]; badgeText.textContent = `head: ${dir}`; }
+    else { badgeIcon.textContent = '🎯'; badgeText.textContent = 'centered'; }
+  });
+  faceReady = true;
+})();
+</script>
+</body>
+</html>

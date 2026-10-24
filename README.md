@@ -8,6 +8,14 @@ Beta builds of the apps I make. Download one, try it, and tell me what breaks.
 | DeskWatch | iPhone + Mac | coming soon |
 | One More Floor | Browser | [Play now](https://joeysayshi.github.io/joey-apps/one-more-floor/) |
 
+## Web projects
+
+| Project | What it is | Open it |
+|---|---|---|
+| Aerofare | A 3D, scroll-driven flight booking experience | [Open](https://joeysayshi.github.io/joey-apps/aerofare/) |
+| Ben's Places | Restaurant map with ratings (demo data, saved in your browser) | [Open](https://joeysayshi.github.io/joey-apps/bens-places/) |
+| Rigged Arcade | Two webcam games: Rock Paper Rigged and Head.io (needs camera access) | [Play](https://joeysayshi.github.io/joey-apps/rigged-arcade/) |
+
 ## How to install (Mac apps)
 
 1. Download the `.dmg` from the table above.

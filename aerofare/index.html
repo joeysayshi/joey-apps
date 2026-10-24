@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Aerofare — Every cabin, in the air</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Overpass:wght@400;600;700;800&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="https://unpkg.com/lenis@1.3.25/dist/lenis.css">
+<script src="https://unpkg.com/lenis@1.3.25/dist/lenis.min.js"></script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+
+<style>
+  :root{
+    --ink: #0B1D3A;
+    --ink-2: #122A52;
+    --ink-3: #1B3766;
+    --paper: #F6F1E4;
+    --paper-2: #EDE6D3;
+    --amber: #FFB238;
+    --amber-deep: #E89416;
+    --slate: #8393B4;
+    --perforation: #C9C2AE;
+    --radius: 4px;
+    --max: 1180px;
+    --ease: cubic-bezier(.16,1,.3,1);
+  }
+  *{ box-sizing:border-box; }
+  html{ scroll-behavior:auto; }
+  body{
+    margin:0;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    overflow-x:hidden;
+  }
+  img{ max-width:100%; display:block; }
+  a{ color:inherit; }
+  h1,h2,h3{ font-family:'Overpass', sans-serif; margin:0; font-weight:800; }
+  button{ font-family:inherit; cursor:pointer; }
+  :focus-visible{ outline:2px solid var(--amber); outline-offset:3px; }
+
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px; letter-spacing:0.18em; text-transform:uppercase;
+    color: var(--amber); display:flex; align-items:center; gap:10px; margin-bottom:16px;
+  }
+  .eyebrow::before{ content:""; width:18px; height:1px; background:var(--amber); display:inline-block; }
+  .wrap{ max-width:var(--max); margin:0 auto; padding:0 28px; }
+
+  .btn{
+    font-family:'Overpass', sans-serif; font-weight:700; font-size:13px;
+    letter-spacing:0.04em; text-transform:uppercase; padding:12px 22px;
+    border-radius:var(--radius); border:none;
+    transition:transform .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+  }
+  .btn-amber{ background:var(--amber); color:var(--ink); }
+  .btn-amber:hover{ background:var(--amber-deep); box-shadow:0 0 0 4px rgba(255,178,56,0.18); transform:translateY(-1px); }
+  .btn-ghost{ background:transparent; border:1px solid rgba(255,255,255,0.3); color:var(--paper); }
+  .btn-ghost:hover{ border-color:var(--amber); color:var(--amber); }
+
+  /* ================= LOADER ================= */
+  .loader{
+    position:fixed; inset:0; z-index:1000; background:var(--ink);
+    display:flex; align-items:center; justify-content:center;
+    transition:opacity .8s var(--ease), visibility .8s var(--ease);
+  }
+  .loader.done{ opacity:0; visibility:hidden; }
+  .loader-inner{ width:min(360px, 80vw); text-align:center; }
+  .loader-label{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.2em; color:var(--slate); margin-bottom:22px; }
+  .loader-pct{ font-family:'Overpass',sans-serif; font-weight:800; font-size:clamp(48px,10vw,72px); color:var(--paper); font-variant-numeric:tabular-nums; margin-bottom:26px; }
+  .loader-track{ position:relative; height:2px; background:rgba(255,255,255,.12); border-radius:2px; margin-bottom:14px; }
+  .loader-fill{ position:absolute; left:0; top:0; height:100%; width:0%; background:var(--amber); border-radius:2px; }
+  .loader-plane{ position:absolute; top:50%; left:0%; transform:translate(-50%,-50%) rotate(90deg); font-size:14px; color:var(--amber); transition:left .1s linear; }
+  .loader-sub{ font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.14em; color:rgba(246,241,228,.35); text-transform:uppercase; }
+
+  /* ================= NAV ================= */
+  header.nav{
+    position:fixed; top:0; left:0; right:0; z-index:100;
+    background:rgba(11,29,58,0.75); backdrop-filter:blur(10px);
+    border-bottom:1px solid rgba(255,255,255,0.08);
+    opacity:0; transform:translateY(-18px); pointer-events:none;
+    transition:opacity .7s var(--ease), transform .7s var(--ease);
+  }
+  header.nav.visible{ opacity:1; transform:translateY(0); pointer-events:auto; }
+  .nav-inner{ max-width:var(--max); margin:0 auto; padding:16px 28px; display:flex; align-items:center; justify-content:space-between; gap:18px; }
+  .logo{ font-family:'Overpass',sans-serif; font-weight:800; font-size:20px; display:flex; align-items:center; gap:8px; }
+  .logo .dot{ width:8px; height:8px; background:var(--amber); border-radius:50%; }
+  .nav-left{ display:flex; align-items:center; gap:18px; }
+  nav.links{ display:flex; gap:32px; font-size:14px; font-weight:500; }
+  nav.links a{ text-decoration:none; opacity:.8; transition:opacity .2s; }
+  nav.links a:hover{ opacity:1; }
+  .sound-toggle{
+    display:flex; align-items:center; gap:8px;
+    background:transparent; border:1px solid rgba(255,255,255,.25); border-radius:999px;
+    padding:6px 12px; font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em;
+    color:var(--slate); transition:border-color .2s, color .2s;
+  }
+  .sound-toggle:hover{ border-color:var(--amber); color:var(--amber); }
+  .sound-toggle .led{ width:6px; height:6px; border-radius:50%; background:var(--slate); transition:background .2s, box-shadow .2s; }
+  .sound-toggle.on .led{ background:var(--amber); box-shadow:0 0 8px var(--amber); }
+  .sound-toggle.on{ color:var(--amber); border-color:rgba(255,178,56,.4); }
+  @media (max-width:780px){ nav.links{ display:none; } }
+
+  /* ================= 3D SCROLL STAGE ================= */
+  .scene-stage{ position:relative; height:650vh; }
+  .scene-sticky{ position:sticky; top:0; height:100vh; overflow:hidden; background:var(--ink); }
+  #webgl{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .scene-vignette{ position:absolute; inset:0; z-index:1; pointer-events:none; background:radial-gradient(ellipse at center, transparent 40%, rgba(11,29,58,.55) 100%); }
+  .scene-overlay{ position:absolute; inset:0; z-index:2; }
+
+  .hero-overlay{
+    position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:0 24px;
+    transition:opacity .5s var(--ease), transform .5s var(--ease);
+  }
+  .hero-overlay p.eyebrow{ justify-content:center; }
+  .hero-overlay p.eyebrow::before{ display:none; }
+  .flap-line{ display:flex; justify-content:center; flex-wrap:wrap; gap:6px; margin-bottom:22px; }
+  .flap-char{
+    font-family:'Overpass',sans-serif; font-weight:800; font-size:clamp(26px,5.4vw,52px); line-height:1;
+    width:clamp(20px,4vw,38px); height:clamp(36px,7vw,64px); background:var(--ink-3); border-radius:3px;
+    display:flex; align-items:center; justify-content:center; color:var(--paper); position:relative; perspective:200px;
+  }
+  .flap-char.space{ background:transparent; width:clamp(10px,2vw,18px); }
+  .flap-char::after{ content:""; position:absolute; left:0; right:0; top:50%; height:1px; background:rgba(0,0,0,.35); }
+  .flap-inner{ display:inline-block; }
+  .flap-char.flip .flap-inner{ animation:flapFlip .09s linear; }
+  @keyframes flapFlip{ 0%{transform:rotateX(0);opacity:1;} 45%{transform:rotateX(-90deg);opacity:.4;} 55%{transform:rotateX(90deg);opacity:.4;} 100%{transform:rotateX(0);opacity:1;} }
+  .hero-overlay .sub{ max-width:480px; font-size:16px; line-height:1.6; color:rgba(246,241,228,.75); margin:0 0 36px; }
+  .scroll-cue{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--slate); display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .scroll-cue .chevron{ width:12px; height:12px; border-right:1px solid var(--amber); border-bottom:1px solid var(--amber); transform:rotate(45deg); animation:cueBounce 1.6s ease-in-out infinite; }
+  @keyframes cueBounce{ 0%,100%{transform:rotate(45deg) translate(0,0);} 50%{transform:rotate(45deg) translate(4px,4px);} }
+
+  .cabin-panel{
+    position:absolute; left:7%; bottom:16%; max-width:420px;
+    opacity:0; transform:translateY(28px); transition:opacity .6s var(--ease), transform .6s var(--ease);
+  }
+  .cabin-panel.active{ opacity:1; transform:translateY(0); }
+  .cabin-panel .idx{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--amber); letter-spacing:.1em; margin-bottom:10px; display:block; }
+  .cabin-panel h3{ font-size:clamp(26px,3.4vw,38px); margin-bottom:12px; }
+  .cabin-panel p{ font-size:15px; line-height:1.6; color:rgba(246,241,228,.75); margin:0 0 18px; }
+  .cabin-panel .price{ font-family:'IBM Plex Mono',monospace; font-size:13px; color:var(--paper); background:rgba(255,255,255,.08); display:inline-block; padding:8px 14px; border-radius:999px; border:1px solid rgba(255,255,255,.15); }
+
+  .cabin-nav{
+    position:absolute; right:6%; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:20px;
+    opacity:0; pointer-events:none; transition:opacity .5s var(--ease);
+  }
+  .cabin-nav.visible{ opacity:1; pointer-events:auto; }
+  .cabin-nav button{
+    background:none; border:none; text-align:right; padding:2px 0 2px 14px; border-left:2px solid rgba(255,255,255,.15);
+    font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.06em; color:var(--slate);
+    transition:color .2s, border-color .2s;
+  }
+  .cabin-nav button.active{ color:var(--amber); border-left-color:var(--amber); }
+  @media (max-width:900px){ .cabin-nav{ display:none; } .cabin-panel{ left:6%; right:6%; max-width:none; } }
+
+  /* airline HUD readout */
+  .hud{
+    position:absolute; top:14%; left:7%; opacity:0; transform:translateY(-10px);
+    transition:opacity .4s var(--ease); font-family:'IBM Plex Mono',monospace;
+  }
+  .hud.visible{ opacity:1; }
+  .hud-eyebrow{ font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--slate); margin-bottom:6px; }
+  .hud-name{ font-size:15px; font-weight:600; color:var(--paper); letter-spacing:.03em; transition:opacity .25s ease, transform .25s ease; }
+  .hud-name.swap{ opacity:0; transform:translateY(-6px); }
+  .hud-flight{ font-size:11px; color:var(--amber); margin-top:4px; }
+
+  /* ================= SECTION HEAD (shared) ================= */
+  .section-head{ max-width:560px; margin-bottom:56px; }
+  .section-head h2{ font-size:clamp(28px,4vw,42px); margin-bottom:14px; }
+  .section-head p{ font-size:15px; line-height:1.6; margin:0; }
+  .on-ink .section-head p{ color:rgba(246,241,228,.65); }
+  .on-paper .section-head p{ color:#5c5540; }
+  .on-paper .eyebrow{ color:#B57315; }
+  .on-paper .eyebrow::before{ background:#B57315; }
+
+  .reveal{ opacity:0; transform:translateY(22px); transition:opacity .7s var(--ease), transform .7s var(--ease); }
+  .reveal.in-view{ opacity:1; transform:translateY(0); }
+
+  /* ================= DESTINATIONS ================= */
+  .destinations{ background:var(--paper); color:var(--ink); padding:120px 0; }
+  .dest-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  @media (max-width:900px){ .dest-grid{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:600px){ .dest-grid{ grid-template-columns:1fr; } }
+  .dest-card{ background:#FFFDF7; border:1px solid var(--perforation); border-radius:8px; padding:22px; transition:transform .3s var(--ease), box-shadow .3s var(--ease); }
+  .dest-card:hover{ transform:translateY(-4px); box-shadow:0 16px 30px rgba(11,29,58,.12); }
+  .dest-route{ display:flex; align-items:center; justify-content:space-between; font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:22px; margin-bottom:6px; }
+  .dest-route .arc{ flex:1; height:20px; margin:0 10px; }
+  .dest-route svg{ width:100%; height:100%; overflow:visible; }
+  .dest-route path{ fill:none; stroke:#C9BE9C; stroke-width:1.5; stroke-dasharray:4 5; stroke-dashoffset:60; transition:stroke-dashoffset 1.2s var(--ease); }
+  .dest-card.in-view .dest-route path{ stroke-dashoffset:0; }
+  .dest-tag{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:#8a806a; margin-bottom:16px; }
+  .dest-foot{ display:flex; justify-content:space-between; align-items:baseline; border-top:1px dashed var(--perforation); padding-top:14px; }
+  .dest-price{ font-family:'Overpass',sans-serif; font-weight:800; font-size:20px; }
+  .dest-price span{ font-family:'IBM Plex Mono',monospace; font-weight:400; font-size:11px; color:#8a806a; display:block; }
+  .dest-cta{ font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.06em; text-decoration:none; color:var(--ink); border-bottom:1px solid var(--ink); padding-bottom:2px; }
+
+  /* ================= BENEFITS ================= */
+  .benefits{ padding:120px 0; background:var(--ink); border-top:1px solid rgba(255,255,255,.08); }
+  .benefit-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; }
+  @media (max-width:960px){ .benefit-grid{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:560px){ .benefit-grid{ grid-template-columns:1fr; } }
+  .benefit-card{ position:relative; height:170px; border-radius:8px; background:var(--ink-2); border:1px solid rgba(255,255,255,.1); overflow:hidden; }
+  .benefit-face{ position:absolute; inset:0; padding:22px; display:flex; flex-direction:column; justify-content:center; transition:opacity .4s var(--ease), transform .4s var(--ease); }
+  .benefit-old{ color:rgba(246,241,228,.5); }
+  .benefit-old .mark{ color:#D9645A; font-family:'IBM Plex Mono',monospace; font-size:13px; margin-bottom:10px; }
+  .benefit-old .label{ font-family:'Overpass',sans-serif; font-weight:700; font-size:17px; text-decoration:line-through; text-decoration-color:rgba(217,100,90,.6); }
+  .benefit-new{ opacity:0; transform:translateY(8px); }
+  .benefit-new .mark{ color:var(--amber); font-family:'IBM Plex Mono',monospace; font-size:13px; margin-bottom:10px; }
+  .benefit-new .label{ font-family:'Overpass',sans-serif; font-weight:700; font-size:17px; }
+  .benefit-card.revealed .benefit-old{ opacity:0; transform:translateY(-8px); }
+  .benefit-card.revealed .benefit-new{ opacity:1; transform:translateY(0); }
+  .benefit-card::after{ content:"tap"; position:absolute; bottom:10px; right:14px; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--slate); opacity:.6; }
+
+  /* ================= REVIEWS ================= */
+  .reviews{ background:var(--paper); color:var(--ink); padding:120px 0; }
+  .review-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  @media (max-width:900px){ .review-grid{ grid-template-columns:1fr; } }
+  .review-card{ background:#FFFDF7; border:1px solid var(--perforation); border-radius:8px; padding:26px; position:relative; }
+  .review-stars{ color:var(--amber-deep); font-size:14px; letter-spacing:2px; margin-bottom:14px; }
+  .review-quote{ font-size:15px; line-height:1.6; color:#3a3728; margin:0 0 20px; }
+  .review-foot{ display:flex; justify-content:space-between; align-items:center; border-top:1px dashed var(--perforation); padding-top:14px; font-family:'IBM Plex Mono',monospace; font-size:11px; color:#6b6350; }
+  .review-foot strong{ display:block; font-family:'Overpass',sans-serif; font-weight:700; font-size:13px; color:var(--ink); margin-bottom:2px; }
+
+  /* ================= TIPS ================= */
+  .tips{ background:var(--ink); padding:120px 0; border-top:1px solid rgba(255,255,255,.08); }
+  .tips-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  @media (max-width:900px){ .tips-grid{ grid-template-columns:repeat(2,1fr); } }
+  @media (max-width:560px){ .tips-grid{ grid-template-columns:1fr; } }
+  .tip-card{ background:var(--ink-2); border:1px solid rgba(255,255,255,.1); border-radius:8px; padding:22px; }
+  .tip-icon{ width:32px; height:32px; margin-bottom:14px; color:var(--amber); }
+  .tip-card h4{ font-family:'Overpass',sans-serif; font-weight:700; font-size:15px; margin-bottom:8px; }
+  .tip-card p{ font-size:13px; line-height:1.55; color:rgba(246,241,228,.6); margin:0; }
+
+  /* ================= BOOKING PASS ================= */
+  .booking{ background:var(--paper); color:var(--ink); padding:120px 0; }
+  .pass{ max-width:920px; margin:0 auto; background:#FFFDF7; border-radius:10px; display:grid; grid-template-columns:1fr 220px; box-shadow:0 30px 80px rgba(11,29,58,0.18); overflow:hidden; }
+  .pass-main{ padding:34px 36px; }
+  .pass-head{ display:flex; justify-content:space-between; align-items:baseline; margin-bottom:26px; font-family:'IBM Plex Mono',monospace; }
+  .pass-head .airline{ font-weight:600; letter-spacing:.08em; font-size:13px; }
+  .pass-head .code{ font-size:12px; color:#6b6350; }
+  .trip-toggle{ display:flex; gap:6px; margin-bottom:22px; }
+  .trip-toggle button{ background:none; border:1px solid var(--perforation); padding:7px 14px; border-radius:999px; font-size:12px; font-family:'IBM Plex Mono',monospace; color:#6b6350; transition:all .2s; }
+  .trip-toggle button.active{ background:var(--ink); color:var(--paper); border-color:var(--ink); }
+  form.search-grid{ display:grid; grid-template-columns:1fr 1fr; gap:18px 20px; }
+  .field{ display:flex; flex-direction:column; gap:6px; border-bottom:1px solid var(--perforation); padding-bottom:10px; }
+  .field label{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.1em; text-transform:uppercase; color:#6b6350; }
+  .field input, .field select{ border:none; background:transparent; font-family:'Overpass',sans-serif; font-weight:700; font-size:17px; color:var(--ink); padding:0; }
+  .field input:focus, .field select:focus{ outline:none; }
+  .field.small{ font-size:14px; }
+  .pass-stub{ background:var(--paper-2); border-left:2px dashed var(--perforation); padding:34px 24px; display:flex; flex-direction:column; justify-content:space-between; position:relative; }
+  .pass-stub::before, .pass-stub::after{ content:""; position:absolute; left:-9px; width:18px; height:18px; background:var(--ink); border-radius:50%; }
+  .pass-stub::before{ top:-9px; } .pass-stub::after{ bottom:-9px; }
+  .stub-label{ font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:.12em; color:#6b6350; margin-bottom:6px; }
+  .stub-price{ font-family:'Overpass',sans-serif; font-weight:800; font-size:30px; margin-bottom:22px; }
+  .barcode{ height:36px; background:repeating-linear-gradient(90deg, var(--ink) 0 2px, transparent 2px 5px, var(--ink) 5px 6px, transparent 6px 9px); margin-top:18px; opacity:.85; }
+  @media (max-width:720px){
+    .pass{ grid-template-columns:1fr; }
+    .pass-stub{ border-left:none; border-top:2px dashed var(--perforation); }
+    .pass-stub::before,.pass-stub::after{ left:50%; transform:translateX(-50%); }
+    form.search-grid{ grid-template-columns:1fr; }
+  }
+
+  /* ================= FAQ (animated) ================= */
+  .faq{ background:var(--ink); padding:120px 0; border-top:1px solid rgba(255,255,255,.08); }
+  .faq-list{ max-width:760px; }
+  .faq-item{
+    border-bottom:1px solid rgba(255,255,255,.12);
+    opacity:0; transform:translateY(16px); transition:opacity .5s var(--ease), transform .5s var(--ease);
+  }
+  .faq-item.in-view{ opacity:1; transform:translateY(0); }
+  .faq-q{
+    width:100%; background:none; border:none; text-align:left; padding:22px 0;
+    display:flex; justify-content:space-between; align-items:center; gap:16px;
+    font-family:'Overpass',sans-serif; font-weight:700; font-size:17px; color:var(--paper);
+  }
+  .faq-icon{ position:relative; width:18px; height:18px; flex:none; }
+  .faq-icon::before, .faq-icon::after{ content:""; position:absolute; background:var(--amber); border-radius:2px; transition:transform .35s var(--ease); }
+  .faq-icon::before{ left:0; top:8px; width:18px; height:2px; }
+  .faq-icon::after{ left:8px; top:0; width:2px; height:18px; }
+  .faq-item.open .faq-icon::after{ transform:rotate(90deg); }
+  .faq-item.open .faq-q{ color:var(--amber); }
+  .faq-a{ max-height:0; overflow:hidden; transition:max-height .55s var(--ease); }
+  .faq-item.open .faq-a{ max-height:220px; }
+  .faq-a-inner{ padding:0 0 24px; opacity:0; transform:translateY(-6px); transition:opacity .4s ease .1s, transform .4s ease .1s; }
+  .faq-item.open .faq-a-inner{ opacity:1; transform:translateY(0); }
+  .faq-a-inner p{ margin:0; font-size:14px; line-height:1.6; color:rgba(246,241,228,.68); max-width:600px; }
+
+  /* ================= NEWSLETTER ================= */
+  .newsletter{ background:linear-gradient(120deg, var(--ink-3), var(--ink)); padding:100px 0; text-align:center; }
+  .newsletter h2{ font-size:clamp(26px,4vw,38px); margin-bottom:14px; }
+  .newsletter p{ color:rgba(246,241,228,.7); margin:0 0 32px; }
+  .newsletter form{ display:flex; gap:10px; max-width:420px; margin:0 auto; flex-wrap:wrap; justify-content:center; }
+  .newsletter input{ flex:1; min-width:220px; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); border-radius:var(--radius); padding:12px 16px; color:var(--paper); font-family:'IBM Plex Mono',monospace; font-size:13px; }
+  .newsletter input::placeholder{ color:rgba(246,241,228,.4); }
+  .newsletter .note{ margin-top:14px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--amber); min-height:16px; }
+
+  /* ================= FOOTER ================= */
+  footer{ background:#081428; }
+  .marquee{ overflow:hidden; white-space:nowrap; border-bottom:1px solid rgba(255,255,255,.08); padding:16px 0; }
+  .marquee-track{ display:inline-block; animation:marquee 20s linear infinite; font-family:'Overpass',sans-serif; font-weight:800; font-size:15px; letter-spacing:.06em; color:rgba(246,241,228,.4); }
+  .marquee-track span{ margin:0 22px; }
+  @keyframes marquee{ from{ transform:translateX(0); } to{ transform:translateX(-50%); } }
+  footer .wrap{ padding-top:56px; padding-bottom:28px; }
+  .foot-grid{ display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:32px; margin-bottom:48px; }
+  @media (max-width:780px){ .foot-grid{ grid-template-columns:1fr 1fr; } }
+  .foot-grid h4{ font-family:'IBM Plex Mono',monospace; font-size:12px; letter-spacing:.1em; text-transform:uppercase; color:var(--slate); margin:0 0 16px; }
+  .foot-grid ul{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; }
+  .foot-grid a{ text-decoration:none; font-size:14px; color:rgba(246,241,228,.75); }
+  .foot-grid a:hover{ color:var(--amber); }
+  .foot-bottom{ border-top:1px solid rgba(255,255,255,.08); padding-top:22px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--slate); }
+
+  @media (prefers-reduced-motion: reduce){
+    .marquee-track{ animation-play-state:paused; }
+    .scroll-cue .chevron{ animation:none; }
+    *{ animation-duration:0.01ms !important; transition-duration:0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="loader" id="loader">
+  <div class="loader-inner">
+    <div class="loader-label">Preparing your flight</div>
+    <div class="loader-pct" id="loaderPct">0%</div>
+    <div class="loader-track">
+      <div class="loader-fill" id="loaderFill"></div>
+      <div class="loader-plane" id="loaderPlane">✈</div>
+    </div>
+    <div class="loader-sub">Aerofare · Boarding sequence</div>
+  </div>
+</div>
+
+<header class="nav" id="siteNav">
+  <div class="nav-inner">
+    <div class="nav-left">
+      <button class="sound-toggle" id="soundToggle" aria-pressed="false">
+        <span class="led"></span><span id="soundLabel">SOUND OFF</span>
+      </button>
+      <div class="logo"><span class="dot"></span>AEROFARE</div>
+    </div>
+    <nav class="links">
+      <a href="#cabins">Cabins</a>
+      <a href="#destinations">Destinations</a>
+      <a href="#reviews">Reviews</a>
+      <a href="#book">Book</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <button class="btn btn-amber" id="navBookBtn">Book now</button>
+  </div>
+</header>
+
+<section class="scene-stage" id="cabins">
+  <div class="scene-sticky">
+    <canvas id="webgl"></canvas>
+    <div class="scene-vignette"></div>
+    <div class="scene-overlay">
+
+      <div class="hero-overlay" id="heroOverlay">
+        <p class="eyebrow">SYD Departures · Live</p>
+        <div class="flap-line" id="flapHeadline"></div>
+        <p class="sub">Search hundreds of routes and pick a cabin — from smart economy to a private first-class suite.</p>
+        <div class="scroll-cue"><span>Scroll to explore</span><span class="chevron"></span></div>
+      </div>
+
+      <div class="hud" id="hud">
+        <div class="hud-eyebrow">Operated by</div>
+        <div class="hud-name" id="hudName">Aerofare World</div>
+        <div class="hud-flight" id="hudFlight">AF 2044 · SYD</div>
+      </div>
+
+      <div class="cabin-panel" data-idx="0">
+        <span class="idx">01 · CABIN</span>
+        <h3>Smart Economy</h3>
+        <p>Extra legroom seats, a free carry-on, and seatback entertainment on every long-haul route.</p>
+        <span class="price">from $549</span>
+      </div>
+      <div class="cabin-panel" data-idx="1">
+        <span class="idx">02 · CABIN</span>
+        <h3>Premium Economy</h3>
+        <p>Wider seats, priority boarding, and a proper menu — for the flight that's part of the trip.</p>
+        <span class="price">from $1,299</span>
+      </div>
+      <div class="cabin-panel" data-idx="2">
+        <span class="idx">03 · CABIN</span>
+        <h3>Business</h3>
+        <p>Lie-flat seats, lounge access, and a cabin crew that remembers your name.</p>
+        <span class="price">from $3,450</span>
+      </div>
+      <div class="cabin-panel" data-idx="3">
+        <span class="idx">04 · CABIN</span>
+        <h3>First</h3>
+        <p>Private suites, chauffeur transfers, and a cellar list longer than most restaurants'.</p>
+        <span class="price">from $8,900</span>
+      </div>
+
+      <div class="cabin-nav" id="cabinNav">
+        <button data-idx="0">01 Economy</button>
+        <button data-idx="1">02 Premium</button>
+        <button data-idx="2">03 Business</button>
+        <button data-idx="3">04 First</button>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section class="destinations on-paper" id="destinations">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Popular routes</p>
+      <h2>Where Sydney flies next</h2>
+      <p>Fares shown are round trip, economy, and update in real time as seats sell.</p>
+    </div>
+    <div class="dest-grid" id="destGrid"></div>
+  </div>
+</section>
+
+<section class="benefits on-ink" id="benefits">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Zero fine print</p>
+      <h2>Flying, minus the fine print.</h2>
+      <p>Tap a card to see what changes when you book with Aerofare.</p>
+    </div>
+    <div class="benefit-grid" id="benefitGrid">
+      <div class="benefit-card"><div class="benefit-face benefit-old"><span class="mark">✕</span><span class="label">Hidden fees</span></div><div class="benefit-face benefit-new"><span class="mark">✓</span><span class="label">All-in fares, taxes included</span></div></div>
+      <div class="benefit-card"><div class="benefit-face benefit-old"><span class="mark">✕</span><span class="label">Paper boarding pass</span></div><div class="benefit-face benefit-new"><span class="mark">✓</span><span class="label">Mobile pass, synced to your wallet</span></div></div>
+      <div class="benefit-card"><div class="benefit-face benefit-old"><span class="mark">✕</span><span class="label">Static prices</span></div><div class="benefit-face benefit-new"><span class="mark">✓</span><span class="label">Fare-drop alerts, automatically</span></div></div>
+      <div class="benefit-card"><div class="benefit-face benefit-old"><span class="mark">✕</span><span class="label">Overbooked cabins</span></div><div class="benefit-face benefit-new"><span class="mark">✓</span><span class="label">Guaranteed seat, no bump</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section class="reviews on-paper" id="reviews">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">From the cabin</p>
+      <h2>What flyers say</h2>
+      <p>Real routes, real fares — a few notes from recent trips.</p>
+    </div>
+    <div class="review-grid" id="reviewGrid"></div>
+  </div>
+</section>
+
+<section class="tips on-ink" id="tips">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Before you fly</p>
+      <h2>A few things that help</h2>
+      <p>Small habits that make a long day of travel a lot shorter.</p>
+    </div>
+    <div class="tips-grid" id="tipsGrid"></div>
+  </div>
+</section>
+
+<section class="booking on-paper" id="book">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Book a flight</p>
+      <h2>Ready when your dates are.</h2>
+      <p>No account required to search. Create one at checkout to save your itinerary.</p>
+    </div>
+    <div class="pass reveal">
+      <div class="pass-main">
+        <div class="pass-head"><span class="airline">AEROFARE · E-TICKET</span><span class="code">CLASS: ECONOMY</span></div>
+        <div class="trip-toggle" role="group" aria-label="Trip type">
+          <button type="button" class="active" data-trip="round">Round trip</button>
+          <button type="button" data-trip="one">One way</button>
+        </div>
+        <form class="search-grid" onsubmit="handleSearch(event)">
+          <div class="field"><label for="from">From</label><input id="from" type="text" value="Sydney (SYD)" required /></div>
+          <div class="field"><label for="to">To</label><input id="to" type="text" value="Tokyo (NRT)" required /></div>
+          <div class="field"><label for="depart">Depart</label><input id="depart" type="date" required /></div>
+          <div class="field" id="return-field"><label for="return">Return</label><input id="return" type="date" required /></div>
+          <div class="field small"><label for="pax">Passengers</label><select id="pax"><option>1 adult</option><option>2 adults</option><option>3 adults</option><option>4 adults</option></select></div>
+          <div class="field small"><label for="cabin">Cabin</label><select id="cabin"><option>Economy</option><option>Premium Economy</option><option>Business</option><option>First</option></select></div>
+        </form>
+      </div>
+      <div class="pass-stub">
+        <div>
+          <div class="stub-label">Fares from</div>
+          <div class="stub-price">$549</div>
+          <button class="btn btn-amber" style="width:100%" onclick="handleSearch(event)">Search</button>
+        </div>
+        <div>
+          <div class="barcode" aria-hidden="true"></div>
+          <div class="stub-label" style="margin-top:8px; margin-bottom:0;">GATE · TBD</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="faq on-ink" id="faq">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <p class="eyebrow">Questions</p>
+      <h2>Good to know</h2>
+    </div>
+    <div class="faq-list" id="faqList"></div>
+  </div>
+</section>
+
+<section class="newsletter">
+  <div class="wrap">
+    <h2 class="reveal">Fare alerts, not spam.</h2>
+    <p class="reveal">Join the list and be first to know when your route drops in price.</p>
+    <form id="newsletterForm" class="reveal" onsubmit="handleNewsletter(event)">
+      <input type="email" placeholder="your@email.com" required />
+      <button type="submit" class="btn btn-amber">Subscribe</button>
+    </form>
+    <div class="note" id="newsletterNote"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="marquee"><div class="marquee-track">
+    <span>AEROFARE</span><span>—</span><span>FLY FARTHER</span><span>—</span><span>AEROFARE</span><span>—</span><span>FLY FARTHER</span><span>—</span>
+    <span>AEROFARE</span><span>—</span><span>FLY FARTHER</span><span>—</span><span>AEROFARE</span><span>—</span><span>FLY FARTHER</span><span>—</span>
+  </div></div>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="logo" style="margin-bottom:14px;"><span class="dot"></span>AEROFARE</div>
+        <p style="font-size:13px; color:rgba(246,241,228,.55); max-width:260px; margin:0;">Search, compare, and book flights across 140+ destinations from Sydney and beyond.</p>
+      </div>
+      <div><h4>Company</h4><ul><li><a href="#">About</a></li><li><a href="#">Careers</a></li><li><a href="#">Press</a></li></ul></div>
+      <div><h4>Support</h4><ul><li><a href="#">Help centre</a></li><li><a href="#">Manage booking</a></li><li><a href="#">Check-in</a></li></ul></div>
+      <div><h4>Legal</h4><ul><li><a href="#">Terms</a></li><li><a href="#">Privacy</a></li><li><a href="#">Fare rules</a></li></ul></div>
+    </div>
+    <div class="foot-bottom"><span>© 2026 AEROFARE INC.</span><span>SYD · MEL · BNE · PER</span></div>
+  </div>
+</footer>
+
+<script>
+  /* ============ SOUND ENGINE (synthesized, no external files) ============ */
+  const AF_SOUND = (() => {
+    let ctx = null, master = null, engineGain = null, enabled = false, engineOsc = null, engineNoise = null;
+
+    function ensureCtx(){
+      if (!ctx) {
+        ctx = new (window.AudioContext || window.webkitAudioContext)();
+        master = ctx.createGain(); master.gain.value = 0.5; master.connect(ctx.destination);
+        engineGain = ctx.createGain(); engineGain.gain.value = 0; engineGain.connect(master);
+
+        engineOsc = ctx.createOscillator(); engineOsc.type = 'sawtooth'; engineOsc.frequency.value = 68;
+        const engineFilter = ctx.createBiquadFilter(); engineFilter.type = 'lowpass'; engineFilter.frequency.value = 220;
+        engineOsc.connect(engineFilter); engineFilter.connect(engineGain); engineOsc.start();
+
+        const bufferSize = 2 * ctx.sampleRate;
+        const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const data = noiseBuffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+        engineNoise = ctx.createBufferSource(); engineNoise.buffer = noiseBuffer; engineNoise.loop = true;
+        const noiseFilter = ctx.createBiquadFilter(); noiseFilter.type = 'bandpass'; noiseFilter.frequency.value = 900; noiseFilter.Q.value = 0.6;
+        const noiseGain = ctx.createGain(); noiseGain.gain.value = 0.15;
+        engineNoise.connect(noiseFilter); noiseFilter.connect(noiseGain); noiseGain.connect(engineGain);
+        engineNoise.start();
+      }
+      if (ctx.state === 'suspended') ctx.resume();
+    }
+
+    function blip(freq, dur, type, delay, vol){
+      if (!enabled || !ctx) return;
+      const t0 = ctx.currentTime + (delay || 0);
+      const osc = ctx.createOscillator(); osc.type = type || 'sine'; osc.frequency.value = freq;
+      const g = ctx.createGain(); g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(vol || 0.25, t0 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+      osc.connect(g); g.connect(master);
+      osc.start(t0); osc.stop(t0 + dur + 0.05);
+    }
+
+    return {
+      toggle(){
+        ensureCtx();
+        enabled = !enabled;
+        if (engineGain) engineGain.gain.setTargetAtTime(enabled ? 0.16 : 0, ctx.currentTime, 0.4);
+        if (enabled) blip(720, 0.12, 'sine', 0, 0.2);
+        return enabled;
+      },
+      isEnabled(){ return enabled; },
+      setEngineIntensity(v){
+        if (!enabled || !engineGain || !ctx) return;
+        const level = 0.05 + Math.max(0, Math.min(1, v)) * 0.18;
+        engineGain.gain.setTargetAtTime(level, ctx.currentTime, 0.5);
+        if (engineOsc) engineOsc.frequency.setTargetAtTime(64 + v * 26, ctx.currentTime, 0.5);
+      },
+      whoosh(){
+        if (!enabled || !ctx) return;
+        const t0 = ctx.currentTime;
+        const bufferSize = 0.5 * ctx.sampleRate;
+        const buf = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+        const d = buf.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) d[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource(); src.buffer = buf;
+        const filt = ctx.createBiquadFilter(); filt.type = 'bandpass'; filt.Q.value = 0.8;
+        filt.frequency.setValueAtTime(300, t0);
+        filt.frequency.linearRampToValueAtTime(2400, t0 + 0.35);
+        filt.frequency.linearRampToValueAtTime(500, t0 + 0.55);
+        const g = ctx.createGain(); g.gain.setValueAtTime(0, t0);
+        g.gain.linearRampToValueAtTime(0.22, t0 + 0.1);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.55);
+        src.connect(filt); filt.connect(g); g.connect(master);
+        src.start(t0); src.stop(t0 + 0.6);
+      },
+      chime(){
+        if (!enabled) return;
+        blip(880, 0.4, 'sine', 0, 0.18);
+        blip(660, 0.45, 'sine', 0.16, 0.16);
+      },
+      click(){ blip(700, 0.08, 'sine', 0, 0.14); },
+      ding(){ blip(1180, 0.35, 'sine', 0, 0.2); }
+    };
+  })();
+  window.AF_SOUND = AF_SOUND;
+
+  const soundToggle = document.getElementById('soundToggle');
+  const soundLabel = document.getElementById('soundLabel');
+  soundToggle.addEventListener('click', () => {
+    const on = AF_SOUND.toggle();
+    soundToggle.classList.toggle('on', on);
+    soundToggle.setAttribute('aria-pressed', String(on));
+    soundLabel.textContent = on ? 'SOUND ON' : 'SOUND OFF';
+  });
+
+  /* ============ LOADER ============ */
+  const loader = document.getElementById('loader');
+  const loaderPct = document.getElementById('loaderPct');
+  const loaderFill = document.getElementById('loaderFill');
+  const loaderPlane = document.getElementById('loaderPlane');
+  const siteNav = document.getElementById('siteNav');
+
+  // Real load progress is reported by the GLTFLoader pipeline via window.AF_LOAD_PROGRESS (0-1).
+  // Until that starts reporting, we creep slowly so the bar never looks frozen at 0%.
+  window.AF_LOAD_PROGRESS = 0;
+  let displayed = 0, assetsReady = false, loaderDone = false;
+  function loaderTick(){
+    if (loaderDone) return;
+    const real = window.AF_LOAD_PROGRESS * 100;
+    const target = assetsReady ? 100 : Math.max(real, Math.min(displayed + 0.4, 85));
+    const speed = assetsReady ? 0.16 : 0.12;
+    displayed += (target - displayed) * speed;
+    if (displayed > target) displayed = target;
+    const shown = Math.min(100, Math.round(displayed));
+    loaderPct.textContent = shown + '%';
+    loaderFill.style.width = displayed + '%';
+    loaderPlane.style.left = displayed + '%';
+    if (assetsReady && displayed >= 99.6) {
+      finishLoader();
+      return;
+    }
+    requestAnimationFrame(loaderTick);
+  }
+  function finishLoader(){
+    loaderDone = true;
+    loaderPct.textContent = '100%';
+    loaderFill.style.width = '100%';
+    loaderPlane.style.left = '100%';
+    setTimeout(() => {
+      loader.classList.add('done');
+      siteNav.classList.add('visible');
+      setTimeout(() => { loader.style.display = 'none'; }, 850);
+    }, 280);
+  }
+  requestAnimationFrame(loaderTick);
+  Promise.all([
+    document.fonts ? document.fonts.ready : Promise.resolve(),
+    new Promise(res => { if (document.readyState === 'complete') res(); else window.addEventListener('load', res); }),
+    new Promise(res => { window.AF_MODELS_READY = res; }), // resolved by the module script once all 4 planes are loaded
+    new Promise(res => setTimeout(res, 900)),
+  ]).then(() => { assetsReady = true; });
+  // hard safety net so the page never gets stuck loading (e.g. slow connection)
+  setTimeout(() => { assetsReady = true; }, 12000);
+
+  /* ============ NAV / SCROLL HELPERS ============ */
+  const lenis = new Lenis({ autoRaf: true, autoToggle: true, anchors: true, allowNestedScroll: true, naiveDimensions: true, stopInertiaOnNavigate: true });
+  window.lenis = lenis;
+  function scrollToId(id){
+    const el = document.getElementById(id);
+    if (!el) return;
+    AF_SOUND.click();
+    if (window.lenis) window.lenis.scrollTo(el, { duration: 1.2 });
+    else el.scrollIntoView({ behavior: 'smooth' });
+  }
+  document.getElementById('navBookBtn').addEventListener('click', () => scrollToId('book'));
+  document.querySelectorAll('nav.links a').forEach(a => {
+    a.addEventListener('click', () => AF_SOUND.click());
+  });
+
+  /* ============ BOOKING FORM ============ */
+  const tripButtons = document.querySelectorAll('.trip-toggle button');
+  const returnField = document.getElementById('return-field');
+  tripButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tripButtons.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      returnField.style.display = btn.dataset.trip === 'one' ? 'none' : 'flex';
+      AF_SOUND.click();
+    });
+  });
+  const departInput = document.getElementById('depart');
+  const returnInput = document.getElementById('return');
+  const today = new Date();
+  const inTwoWeeks = new Date(today.getTime() + 14*24*3600*1000);
+  const inThreeWeeks = new Date(today.getTime() + 21*24*3600*1000);
+  const fmt = d => d.toISOString().split('T')[0];
+  departInput.value = fmt(inTwoWeeks);
+  returnInput.value = fmt(inThreeWeeks);
+  departInput.min = fmt(today);
+  returnInput.min = fmt(inTwoWeeks);
+  function handleSearch(e){
+    e.preventDefault();
+    AF_SOUND.click();
+    const from = document.getElementById('from').value || 'Sydney';
+    const to = document.getElementById('to').value || 'your destination';
+    alert(`Searching flights from ${from} to ${to}. In a full build this would load live fares.`);
+  }
+  function handleNewsletter(e){
+    e.preventDefault();
+    AF_SOUND.ding();
+    document.getElementById('newsletterNote').textContent = "You're on the list — watch your inbox.";
+    e.target.reset();
+  }
+
+  /* ============ BENEFIT FLIP CARDS ============ */
+  document.querySelectorAll('.benefit-card').forEach(card => {
+    card.addEventListener('click', () => { card.classList.toggle('revealed'); AF_SOUND.click(); });
+  });
+
+  /* ============ SPLIT-FLAP HEADLINE ============ */
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const headline = "YOUR GATE IS OPEN";
+  const flapContainer = document.getElementById('flapHeadline');
+  const glyphs = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const charEls = [];
+  [...headline].forEach(ch => {
+    const el = document.createElement('span');
+    if (ch === ' ') { el.className = 'flap-char space'; el.innerHTML = '<span class="flap-inner"></span>'; }
+    else { el.className = 'flap-char'; el.innerHTML = `<span class="flap-inner">${ch}</span>`; }
+    flapContainer.appendChild(el);
+    charEls.push({ el, inner: el.querySelector('.flap-inner'), final: ch });
+  });
+  function runFlap(item, delay){
+    if (item.final === ' ') return;
+    let steps = 6 + Math.floor(Math.random()*6), count = 0;
+    setTimeout(function tick(){
+      const isLast = count >= steps;
+      item.inner.textContent = isLast ? item.final : glyphs[Math.floor(Math.random()*glyphs.length)];
+      item.el.classList.remove('flip'); void item.el.offsetWidth; item.el.classList.add('flip');
+      count++;
+      if (!isLast) setTimeout(tick, 55 + count*10);
+    }, delay);
+  }
+  if (reduceMotion) charEls.forEach(item => { if (item.final !== ' ') item.inner.textContent = item.final; });
+  else charEls.forEach((item, i) => runFlap(item, 1600 + i*70));
+
+  /* ============ DESTINATIONS ============ */
+  const destinations = [
+    { from:'SYD', to:'NRT', city:'Tokyo, Japan', tag:'Nonstop · 9h 40m', price:1149 },
+    { from:'SYD', to:'LAX', city:'Los Angeles, USA', tag:'Nonstop · 13h 55m', price:989 },
+    { from:'SYD', to:'LHR', city:'London, UK', tag:'1 stop · 22h 10m', price:1499 },
+    { from:'SYD', to:'SIN', city:'Singapore', tag:'Nonstop · 8h 05m', price:549 },
+    { from:'SYD', to:'DXB', city:'Dubai, UAE', tag:'Nonstop · 14h 35m', price:1099 },
+    { from:'SYD', to:'AKL', city:'Auckland, NZ', tag:'Nonstop · 3h 15m', price:319 },
+  ];
+  document.getElementById('destGrid').innerHTML = destinations.map(d => `
+    <div class="dest-card reveal">
+      <div class="dest-route">
+        <span>${d.from}</span>
+        <span class="arc"><svg viewBox="0 0 100 20" preserveAspectRatio="none"><path d="M2,16 Q50,-6 98,16" pathLength="60"></path></svg></span>
+        <span>${d.to}</span>
+      </div>
+      <div class="dest-tag">${d.city} · ${d.tag}</div>
+      <div class="dest-foot">
+        <div class="dest-price">$${d.price}<span>round trip, economy</span></div>
+        <a class="dest-cta" href="#book">Select</a>
+      </div>
+    </div>
+  `).join('');
+
+  /* ============ REVIEWS ============ */
+  const reviews = [
+    { name:'M. Alvarez', route:'SYD → LAX · Business', stars:5, quote:'Lie-flat seat, fast wifi, and the fare-drop alert actually paid off — got $180 back before I even landed.' },
+    { name:'J. Okafor', route:'SYD → SIN · Economy', stars:5, quote:'Boarded with the mobile pass, no queue at the gate. The extra legroom row was worth the small upgrade.' },
+    { name:'R. Tan', route:'SYD → LHR · Premium Economy', stars:4, quote:'Long haul but the seat and the food made it painless. Would book the same cabin again for a trip this long.' },
+  ];
+  document.getElementById('reviewGrid').innerHTML = reviews.map(r => `
+    <div class="review-card reveal">
+      <div class="review-stars">${'★'.repeat(r.stars)}${'☆'.repeat(5-r.stars)}</div>
+      <p class="review-quote">"${r.quote}"</p>
+      <div class="review-foot"><div><strong>${r.name}</strong>${r.route}</div><div>Verified flyer</div></div>
+    </div>
+  `).join('');
+
+  /* ============ TIPS ============ */
+  const tips = [
+    { title:'Pack a light carry-on', text:'One bag under the seat clears security faster and skips the baggage carousel entirely.' },
+    { title:'Beat jet lag early', text:'Shift your sleep schedule an hour a day for three days before a long-haul flight.' },
+    { title:'Pick your seat at booking', text:'Aisle near the front boards and deplanes quicker; window is warmer for red-eyes.' },
+    { title:'Set a fare-drop alert', text:'Prices move daily — an alert refunds the difference automatically if your fare falls.' },
+    { title:'Arrive with buffer', text:'2 hours domestic, 3 hours international — earlier during holidays and peak season.' },
+    { title:'Screenshot your pass', text:'A saved screenshot works even if the airport wifi is slow or your signal drops.' },
+  ];
+  document.getElementById('tipsGrid').innerHTML = tips.map(t => `
+    <div class="tip-card reveal">
+      <svg class="tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l18-7-7 18-2-8-9-3z"/></svg>
+      <h4>${t.title}</h4>
+      <p>${t.text}</p>
+    </div>
+  `).join('');
+
+  /* ============ FAQ (animated accordion) ============ */
+  const faqData = [
+    { q:"Can I change my flight after booking?", a:"Yes. Economy fares allow one free date change up to 24 hours before departure; Premium Economy and up include unlimited changes." },
+    { q:"What's included in the fare?", a:"Every fare includes one carry-on and a personal item. Checked bags, seat selection, and meals vary by cabin — all shown before you pay." },
+    { q:"How early should I arrive at the airport?", a:"We recommend 2 hours before departure for domestic routes and 3 hours for international, longer during peak travel periods." },
+    { q:"Do you offer fare-drop refunds?", a:"If your booked fare drops within 7 days, we credit the difference to your Aerofare wallet automatically — no request needed." },
+  ];
+  const faqList = document.getElementById('faqList');
+  faqList.innerHTML = faqData.map((item, i) => `
+    <div class="faq-item" data-i="${i}">
+      <button class="faq-q" aria-expanded="false">
+        <span>${item.q}</span><span class="faq-icon"></span>
+      </button>
+      <div class="faq-a"><div class="faq-a-inner"><p>${item.a}</p></div></div>
+    </div>
+  `).join('');
+  faqList.querySelectorAll('.faq-item').forEach(item => {
+    const btn = item.querySelector('.faq-q');
+    btn.addEventListener('click', () => {
+      const isOpen = item.classList.contains('open');
+      faqList.querySelectorAll('.faq-item.open').forEach(o => { o.classList.remove('open'); o.querySelector('.faq-q').setAttribute('aria-expanded','false'); });
+      if (!isOpen) { item.classList.add('open'); btn.setAttribute('aria-expanded','true'); }
+      AF_SOUND.click();
+    });
+  });
+
+  /* ============ SCROLL REVEAL ============ */
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const el = entry.target;
+          const group = el.parentElement;
+          const siblings = Array.from(group ? group.children : []).filter(c => c.classList && c.classList.contains('reveal'));
+          const idx = siblings.indexOf(el);
+          el.style.transitionDelay = (Math.max(0, idx) * 70) + 'ms';
+          el.classList.add('in-view');
+          io.unobserve(el);
+        }
+      });
+    }, { threshold: 0.12 });
+    document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+    const io2 = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('in-view');
+          io2.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15 });
+    document.querySelectorAll('.dest-card, .faq-item').forEach(el => io2.observe(el));
+  } else {
+    document.querySelectorAll('.reveal, .dest-card, .faq-item').forEach(el => el.classList.add('in-view'));
+  }
+</script>
+
+<script type="module">
+  import * as THREE from 'three';
+  import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+  import { MeshoptDecoder } from 'https://unpkg.com/three@0.160.0/examples/jsm/libs/meshopt_decoder.module.js';
+
+  const canvas = document.getElementById('webgl');
+  const stage = document.getElementById('cabins');
+  const sceneSticky = document.querySelector('.scene-sticky');
+  const heroOverlay = document.getElementById('heroOverlay');
+  const panels = Array.from(document.querySelectorAll('.cabin-panel'));
+  const cabinNav = document.getElementById('cabinNav');
+  const navButtons = Array.from(cabinNav.querySelectorAll('button'));
+  const hud = document.getElementById('hud');
+  const hudName = document.getElementById('hudName');
+  const hudFlight = document.getElementById('hudFlight');
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const scene = new THREE.Scene();
+  scene.fog = new THREE.FogExp2(0x0B1D3A, 0.045);
+
+  const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+  camera.position.set(0, 0.6, 9);
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
+
+  scene.add(new THREE.HemisphereLight(0xF6F1E4, 0x0B1D3A, 0.9));
+  const keyLight = new THREE.DirectionalLight(0xffffff, 1.1);
+  keyLight.position.set(4, 5, 6);
+  scene.add(keyLight);
+  const rimLight = new THREE.PointLight(0xFFB238, 1.6, 24);
+  rimLight.position.set(-5, 2, -3);
+  scene.add(rimLight);
+
+  /* ---- ambient particle field for depth ---- */
+  function makeDotTexture(){
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const ctx2 = c.getContext('2d');
+    const grad = ctx2.createRadialGradient(32,32,0,32,32,32);
+    grad.addColorStop(0, 'rgba(255,255,255,0.9)');
+    grad.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx2.fillStyle = grad; ctx2.fillRect(0,0,64,64);
+    return new THREE.CanvasTexture(c);
+  }
+  const dotTex = makeDotTexture();
+  const particleCount = 260;
+  const particlePos = new Float32Array(particleCount * 3);
+  for (let i = 0; i < particleCount; i++) {
+    const r = 14 + Math.random() * 22;
+    const theta = Math.random() * Math.PI * 2;
+    const phi = Math.acos((Math.random() * 2) - 1);
+    particlePos[i*3] = r * Math.sin(phi) * Math.cos(theta);
+    particlePos[i*3+1] = r * Math.cos(phi) * 0.5;
+    particlePos[i*3+2] = r * Math.sin(phi) * Math.sin(theta);
+  }
+  const particleGeo = new THREE.BufferGeometry();
+  particleGeo.setAttribute('position', new THREE.BufferAttribute(particlePos, 3));
+  const particleMat = new THREE.PointsMaterial({ size: 0.22, map: dotTex, transparent: true, opacity: 0.35, color: 0xE7ECF6, depthWrite: false });
+  const particles = new THREE.Points(particleGeo, particleMat);
+  scene.add(particles);
+
+  /* ---- real aircraft models ---- */
+  // Each full revolution the plane makes, we swap to the next real aircraft/livery.
+  const airlines = [
+    { name: 'Aerofare World', flight: 'AF 2044', file: './assets/emirates_airbus_a345.glb', forward: 'auto' },
+    { name: 'Qantas', flight: 'QF 12', file: './assets/qantas_airbus_a330-303.glb', forward: 'auto' },
+    { name: 'KLM Royal Dutch', flight: 'KL 806', file: './assets/boeing_737__klm.glb', forward: 'auto' },
+    { name: 'Singapore Airlines', flight: 'SQ 231', file: './assets/boeing_787-9_singapore_airlines.glb', forward: 'auto' },
+  ];
+
+  // planeRig receives the shared flight motion (spin/bank/drift); each model
+  // sits inside it and only the active one is scaled up at a time.
+  const planeRig = new THREE.Group();
+  scene.add(planeRig);
+  const modelGroups = []; // { group, baseScale }
+  let modelsLoadedCount = 0;
+  const loadedBytes = new Array(airlines.length).fill(0);
+  const totalBytes = new Array(airlines.length).fill(1); // updated as headers arrive
+
+  function reportLoadProgress(){
+    const loaded = loadedBytes.reduce((a,b) => a+b, 0);
+    const total = totalBytes.reduce((a,b) => a+b, 0);
+    window.AF_LOAD_PROGRESS = total > 0 ? Math.min(1, loaded/total) : 0;
+  }
+
+  function normalizeAndRig(gltfScene, targetLength){
+    // Recenter the model's own geometry around the origin.
+    const box = new THREE.Box3().setFromObject(gltfScene);
+    const size = new THREE.Vector3(); box.getSize(size);
+    const center = new THREE.Vector3(); box.getCenter(center);
+    gltfScene.position.sub(center);
+
+    const inner = new THREE.Group();
+    inner.add(gltfScene);
+
+    // Heuristic: the aircraft's longer horizontal footprint is its length axis.
+    // If the model's X footprint is longer than Z, rotate 90° so length runs along Z (our "forward").
+    if (size.x > size.z) inner.rotation.y = Math.PI / 2;
+
+    const longDim = Math.max(size.x, size.z) || 1;
+    const scale = targetLength / longDim;
+    inner.scale.setScalar(scale);
+
+    return inner;
+  }
+
+  const gltfLoader = new GLTFLoader();
+  gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+  airlines.forEach((airline, i) => {
+    gltfLoader.load(
+      airline.file,
+      (gltf) => {
+        const rigged = normalizeAndRig(gltf.scene, 7);
+        const targetScale = rigged.scale.clone(); // full pop-in size, captured before collapsing
+        rigged.visible = false;
+        rigged.scale.setScalar(0.0001); // start collapsed; pops in when active
+        planeRig.add(rigged);
+        modelGroups[i] = { group: rigged, targetScale };
+
+        modelsLoadedCount++;
+        loadedBytes[i] = totalBytes[i];
+        reportLoadProgress();
+        if (modelsLoadedCount === airlines.length) {
+          if (window.AF_MODELS_READY) window.AF_MODELS_READY();
+        }
+      },
+      (xhr) => {
+        if (xhr.lengthComputable) totalBytes[i] = xhr.total;
+        loadedBytes[i] = xhr.loaded;
+        reportLoadProgress();
+      },
+      (err) => {
+        console.error('Failed to load', airline.file, err);
+        modelsLoadedCount++;
+        if (modelsLoadedCount === airlines.length && window.AF_MODELS_READY) window.AF_MODELS_READY();
+      }
+    );
+  });
+
+  /* ---- state ---- */
+  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+  const smoothstep = (t) => t * t * (3 - 2 * t);
+  const HERO_FRACTION = 0.10;
+  const REVOLUTIONS = 7;
+
+  let smoothedProgress = 0;
+  let lastRevIndex = -1;
+  let lastCabinIdx = -1;
+  let activeModelIdx = 0;
+  let swapT = 1; // 0→1 pop-in progress of the currently active model
+
+  function computeRawProgress(){
+    const rect = stage.getBoundingClientRect();
+    const scrollable = stage.offsetHeight - window.innerHeight;
+    if (scrollable <= 0) return 0;
+    return clamp(-rect.top / scrollable, 0, 1);
+  }
+
+  function updateHUD(idx){
+    const a = airlines[idx % airlines.length];
+    hudName.classList.add('swap');
+    setTimeout(() => {
+      hudName.textContent = a.name;
+      hudFlight.textContent = a.flight + ' · SYD';
+      hudName.classList.remove('swap');
+    }, 160);
+    activeModelIdx = idx % airlines.length;
+    swapT = 0;
+    if (window.AF_SOUND) window.AF_SOUND.chime();
+  }
+
+  // mouse parallax
+  let mouseX = 0, mouseY = 0, curMouseX = 0, curMouseY = 0;
+  sceneSticky.addEventListener('pointermove', (e) => {
+    const r = sceneSticky.getBoundingClientRect();
+    mouseX = ((e.clientX - r.left) / r.width) - 0.5;
+    mouseY = ((e.clientY - r.top) / r.height) - 0.5;
+  });
+
+  function updateModelSwap(dt){
+    if (swapT < 1) swapT = Math.min(1, swapT + dt * 2.6);
+    const popIn = smoothstep(swapT);
+    for (let i = 0; i < modelGroups.length; i++) {
+      const m = modelGroups[i];
+      if (!m) continue; // not loaded yet
+      const isActive = i === activeModelIdx;
+      m.group.visible = isActive ? popIn > 0.02 : false;
+      if (isActive) {
+        m.group.scale.copy(m.targetScale).multiplyScalar(Math.max(0.001, popIn));
+      }
+    }
+  }
+
+  function applyProgress(progress, elapsed, dt){
+    const heroT = clamp(progress / HERO_FRACTION, 0, 1);
+    heroOverlay.style.opacity = String(1 - heroT);
+    heroOverlay.style.transform = `translateY(${-30 * heroT}px)`;
+    heroOverlay.style.pointerEvents = heroT > 0.5 ? 'none' : 'auto';
+
+    const stageT = clamp((progress - HERO_FRACTION) / (1 - HERO_FRACTION), 0, 1);
+    const segCount = 4;
+    const raw = stageT * segCount;
+    let idx = Math.floor(raw);
+    if (idx >= segCount) idx = segCount - 1;
+    const active = stageT > 0.01;
+
+    panels.forEach((p, i) => p.classList.toggle('active', active && i === idx));
+    navButtons.forEach((b, i) => b.classList.toggle('active', active && i === idx));
+    cabinNav.classList.toggle('visible', active);
+    hud.classList.toggle('visible', active);
+
+    if (active && idx !== lastCabinIdx) {
+      lastCabinIdx = idx;
+      if (window.AF_SOUND) window.AF_SOUND.whoosh();
+    }
+    if (window.AF_SOUND) window.AF_SOUND.setEngineIntensity(stageT);
+
+    const spin = reduceMotion ? progress * Math.PI * 2 : progress * Math.PI * 2 * REVOLUTIONS + elapsed * 0.04;
+    const revIndex = Math.floor(spin / (Math.PI * 2)) % airlines.length;
+    if (active && revIndex !== lastRevIndex) {
+      lastRevIndex = revIndex;
+      updateHUD(revIndex);
+    }
+
+    updateModelSwap(dt);
+
+    planeRig.rotation.y = spin;
+    planeRig.rotation.z = Math.sin(stageT * Math.PI * 5) * 0.2;
+    planeRig.position.x = Math.sin(stageT * Math.PI * 2.4) * 1.2;
+    const idleBob = reduceMotion ? 0 : Math.sin(elapsed * 0.6) * 0.12;
+    planeRig.position.y = idleBob * (1 - stageT * 0.5);
+
+    curMouseX += (mouseX - curMouseX) * 0.04;
+    curMouseY += (mouseY - curMouseY) * 0.04;
+
+    camera.position.z = 9 - stageT * 2.6 + curMouseX * 0.3;
+    camera.position.y = 0.6 - stageT * 0.3 - curMouseY * 0.25;
+    camera.position.x = curMouseX * 0.8;
+    camera.lookAt(0, 0, 0);
+
+    particles.rotation.y = elapsed * 0.015;
+  }
+
+  navButtons.forEach((btn, i) => {
+    btn.addEventListener('click', () => {
+      const scrollable = stage.offsetHeight - window.innerHeight;
+      const targetFrac = HERO_FRACTION + (i + 0.5) * (1 - HERO_FRACTION) / 4;
+      const targetY = stage.offsetTop + targetFrac * scrollable;
+      if (window.lenis) window.lenis.scrollTo(targetY, { duration: 1.3 });
+      else window.scrollTo({ top: targetY, behavior: 'smooth' });
+      if (window.AF_SOUND) window.AF_SOUND.click();
+    });
+  });
+
+  window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+
+  const clock = new THREE.Clock();
+  const DAMP = reduceMotion ? 1 : 0.09;
+  function loop(){
+    const dt = Math.min(0.05, clock.getDelta());
+    const raw = computeRawProgress();
+    smoothedProgress += (raw - smoothedProgress) * DAMP;
+    applyProgress(smoothedProgress, clock.getElapsedTime(), dt);
+    renderer.render(scene, camera);
+    requestAnimationFrame(loop);
+  }
+  loop();
+</script>
+
+</body>
+</html>

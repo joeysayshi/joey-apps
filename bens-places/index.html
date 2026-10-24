@@ -1,0 +1,1322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ben's Places</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,500&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FFF8F0; --paper-deep:#FBEEDA; --card:#FFFFFF;
+    --ink:#2A1F17; --ink-soft:#8A7A69;
+    --line:#EFDDC4;
+    --orange:#FF8A42; --orange-deep:#E9672A; --orange-soft:#FFE3C7;
+    --olive:#5C6B47; --olive-soft:#E7ECDA;
+    --gold:#FFB648; --danger:#C4432B; --danger-soft:#F7DFD8;
+    --shadow: 0 20px 50px -20px rgba(42,31,23,0.25);
+    --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  body{
+    margin:0; font-family:'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background:
+      radial-gradient(60% 50% at 85% -5%, rgba(255,138,66,0.10), transparent 60%),
+      radial-gradient(50% 40% at -5% 15%, rgba(92,107,71,0.08), transparent 60%),
+      var(--paper);
+    color:var(--ink); -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3,.display{ font-family:'Fraunces', Georgia, serif; }
+  button{ font-family:inherit; cursor:pointer; }
+  input, textarea, select{ font-family:inherit; }
+  :focus-visible{ outline:2.5px solid var(--orange-deep); outline-offset:2px; border-radius:4px; }
+  a{ color:inherit; }
+  .hidden{ display:none !important; }
+
+  /* ---------- Navbar ---------- */
+  .navbar{
+    position:sticky; top:0; z-index:70; background:var(--ink); color:#FFF3E6;
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    padding:12px 24px; box-shadow:0 8px 24px -12px rgba(0,0,0,0.4);
+  }
+  .nav-brand{ display:flex; align-items:center; gap:10px; font-family:'Fraunces',serif; font-weight:700; font-size:18px; background:none; border:none; color:#FFF3E6; padding:0; }
+  .nav-brand .pin-mark{
+    width:28px;height:28px; border-radius:9px 9px 9px 3px; background:var(--orange);
+    display:flex; align-items:center; justify-content:center; transform:rotate(-8deg); flex:none;
+  }
+  .nav-mid{ display:flex; gap:6px; align-items:center; }
+  .nav-link{ background:none; border:none; color:#F4E6D4; font-size:13.5px; font-weight:500; padding:8px 14px; border-radius:8px; opacity:0.82; transition:all .18s var(--ease); }
+  .nav-link:hover{ opacity:1; background:rgba(255,255,255,0.08); }
+  .nav-link.active{ opacity:1; background:rgba(255,138,66,0.18); color:var(--orange); }
+  .nav-right{ display:flex; align-items:center; gap:8px; }
+  .btn-ghost-nav{ background:none; border:1.5px solid rgba(255,255,255,0.25); color:#FFF3E6; padding:8px 15px; border-radius:9px; font-size:13px; font-weight:600; transition:all .18s var(--ease); }
+  .btn-ghost-nav:hover{ border-color:var(--orange); color:var(--orange); }
+  .btn-solid-nav{ background:var(--orange); border:1.5px solid var(--orange); color:#2A1300; padding:8px 15px; border-radius:9px; font-size:13px; font-weight:700; transition:all .18s var(--ease); }
+  .btn-solid-nav:hover{ background:var(--orange-deep); border-color:var(--orange-deep); color:white; }
+  .user-chip{ display:flex; align-items:center; gap:8px; background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.15); border-radius:999px; padding:5px 12px 5px 5px; font-size:13px; }
+  .user-avatar{ width:26px;height:26px;border-radius:50%; background:var(--orange); color:#2A1300; font-weight:700; font-size:12px; display:flex; align-items:center; justify-content:center; }
+  .admin-badge{ background:var(--gold); color:#3A2400; font-size:9.5px; font-weight:800; padding:1px 6px; border-radius:999px; letter-spacing:0.03em; margin-left:2px; }
+  .link-btn{ background:none;border:none;color:inherit;font:inherit;text-decoration:underline; cursor:pointer; padding:0; }
+
+  .app-shell{ max-width:1400px; margin:0 auto; padding:0 24px 80px; }
+
+  /* ---------- Landing ---------- */
+  .hero{ padding:74px 0 50px; display:grid; grid-template-columns:1.1fr 0.9fr; gap:50px; align-items:center; }
+  @media (max-width:900px){ .hero{ grid-template-columns:1fr; padding-top:44px; } }
+  .eyebrow{ display:inline-flex; align-items:center; gap:7px; background:var(--olive-soft); color:var(--olive); font-size:12.5px; font-weight:600; padding:6px 13px; border-radius:999px; margin-bottom:18px; }
+  .hero h1{ font-size:52px; line-height:1.05; margin:0 0 18px; font-weight:700; letter-spacing:-0.01em; }
+  .hero h1 em{ color:var(--orange-deep); font-style:italic; }
+  .hero p.lede{ font-size:17px; line-height:1.6; color:var(--ink-soft); max-width:480px; margin:0 0 30px; }
+  .hero-ctas{ display:flex; gap:12px; flex-wrap:wrap; }
+  .btn-primary{ background:var(--orange); color:#2A1300; border:none; padding:15px 26px; border-radius:13px; font-weight:700; font-size:15px; transition:all .2s var(--ease); box-shadow:0 14px 26px -10px rgba(233,103,42,0.5); }
+  .btn-primary:hover{ background:var(--orange-deep); color:white; transform:translateY(-2px); }
+  .btn-secondary{ background:var(--card); border:1.5px solid var(--line); color:var(--ink); padding:15px 26px; border-radius:13px; font-weight:700; font-size:15px; transition:all .2s var(--ease); }
+  .btn-secondary:hover{ border-color:var(--orange); color:var(--orange-deep); transform:translateY(-2px); }
+  .hero-stats{ display:flex; gap:26px; margin-top:36px; }
+  .hero-stat b{ display:block; font-family:'Fraunces',serif; font-size:23px; }
+  .hero-stat span{ font-size:12px; color:var(--ink-soft); }
+
+  .hero-art{ position:relative; aspect-ratio:1/1; }
+  .hero-art svg{ width:100%; height:100%; }
+
+  .section-label{ text-transform:uppercase; letter-spacing:0.1em; font-size:12px; font-weight:700; color:var(--orange-deep); margin-bottom:8px; }
+  .section-title{ font-size:30px; margin:0 0 34px; max-width:560px; }
+
+  .features-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px; padding:50px 0; }
+  @media (max-width:900px){ .features-grid{ grid-template-columns:1fr 1fr; } }
+  @media (max-width:600px){ .features-grid{ grid-template-columns:1fr; } }
+  .feature-card{ background:var(--card); border:1.5px solid var(--line); border-radius:18px; padding:22px; transition:transform .2s var(--ease), box-shadow .2s var(--ease); }
+  .feature-card:hover{ transform:translateY(-4px); box-shadow:var(--shadow); }
+  .feature-ico{ width:42px;height:42px;border-radius:12px; background:var(--orange-soft); display:flex; align-items:center; justify-content:center; font-size:19px; margin-bottom:12px; }
+  .feature-card h3{ font-size:15.5px; margin:0 0 6px; }
+  .feature-card p{ font-size:13px; color:var(--ink-soft); line-height:1.55; margin:0; }
+
+  .howit{ display:grid; grid-template-columns:repeat(3,1fr); gap:22px; padding:20px 0 60px; }
+  @media (max-width:800px){ .howit{ grid-template-columns:1fr; } }
+  .howit-step{ position:relative; padding-left:2px; }
+  .howit-num{ font-family:'Fraunces',serif; font-weight:700; font-size:38px; color:var(--orange-soft); -webkit-text-stroke:1.5px var(--orange-deep); margin-bottom:6px; }
+  .howit-step h3{ font-size:16px; margin:0 0 6px; }
+  .howit-step p{ font-size:13.5px; color:var(--ink-soft); line-height:1.55; margin:0; }
+
+  .landing-footer{ border-top:1.5px solid var(--line); padding:30px 0; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; color:var(--ink-soft); font-size:12.5px; }
+
+  /* ---------- Auth ---------- */
+  .auth-wrap{ max-width:420px; margin:60px auto; }
+  .auth-card{ background:var(--card); border:1.5px solid var(--line); border-radius:22px; padding:32px; box-shadow:var(--shadow); }
+  .auth-tabs{ display:flex; background:var(--paper-deep); border-radius:12px; padding:4px; margin-bottom:22px; }
+  .auth-tab{ flex:1; background:none; border:none; padding:10px; border-radius:9px; font-size:13.5px; font-weight:600; color:var(--ink-soft); transition:all .18s var(--ease); }
+  .auth-tab.active{ background:var(--card); color:var(--ink); box-shadow:0 4px 10px -4px rgba(0,0,0,0.15); }
+  .auth-error{ background:var(--danger-soft); color:var(--danger); font-size:12.5px; padding:10px 12px; border-radius:10px; margin-bottom:14px; display:none; }
+  .auth-error.show{ display:block; }
+  .auth-hint{ font-size:11.5px; color:var(--ink-soft); margin-top:6px; line-height:1.5; }
+  .auth-switch{ text-align:center; font-size:13px; color:var(--ink-soft); margin-top:16px; }
+
+  /* ---------- Shared field styles ---------- */
+  label{ display:block; font-size:12.5px; font-weight:600; color:var(--ink-soft); margin:14px 0 6px; text-transform:uppercase; letter-spacing:0.05em; }
+  label:first-of-type{ margin-top:0; }
+  .field{ width:100%; border:1.5px solid var(--line); border-radius:11px; padding:11px 13px; font-size:14px; background:var(--card); color:var(--ink); transition:border-color .18s var(--ease), box-shadow .18s var(--ease); }
+  .field:focus{ outline:none; border-color:var(--orange); box-shadow:0 0 0 4px var(--orange-soft); }
+  textarea.field{ resize:vertical; min-height:70px; font-family:inherit; }
+  .submit-btn{ width:100%; background:var(--orange); color:#2A1300; border:none; border-radius:12px; padding:14px; font-size:15px; font-weight:700; margin-top:20px; transition:background .18s var(--ease), transform .16s var(--ease); }
+  .submit-btn:hover{ background:var(--orange-deep); color:white; }
+  .submit-btn:active{ transform:scale(0.98); }
+  .submit-btn:disabled{ opacity:0.5; cursor:not-allowed; }
+
+  /* ---------- Controls / app view ---------- */
+  .view-app-inner{ padding-top:26px; }
+  .controls{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:14px; }
+  .search-box{ display:flex; align-items:center; gap:8px; background:var(--card); border:1.5px solid var(--line); border-radius:12px; padding:9px 14px; flex:1; min-width:200px; max-width:320px; transition:border-color .2s var(--ease), box-shadow .2s var(--ease); }
+  .search-box:focus-within{ border-color:var(--orange); box-shadow:0 0 0 4px var(--orange-soft); }
+  .search-box input{ border:none; outline:none; background:none; font-size:14px; width:100%; color:var(--ink); }
+  .search-box svg{ flex:none; color:var(--ink-soft); }
+  .chips{ display:flex; gap:8px; flex-wrap:wrap; }
+  .chip{ border:1.5px solid var(--line); background:var(--card); color:var(--ink-soft); padding:8px 14px; border-radius:999px; font-size:13px; font-weight:500; transition:all .18s var(--ease); }
+  .chip:hover{ border-color:var(--orange); color:var(--orange-deep); }
+  .chip.active{ background:var(--ink); border-color:var(--ink); color:white; }
+  .sort-select{ margin-left:auto; border:1.5px solid var(--line); border-radius:10px; padding:9px 12px; font-size:13px; background:var(--card); color:var(--ink); }
+
+  .strip-title{ font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--ink-soft); margin:4px 0 10px; display:flex; align-items:center; gap:6px; }
+  .picks-strip{ display:flex; gap:12px; overflow-x:auto; padding-bottom:14px; margin-bottom:6px; }
+  .pick-card{ flex:none; width:190px; background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:14px; cursor:pointer; transition:transform .18s var(--ease); }
+  .pick-card:hover{ transform:translateY(-3px); border-color:var(--orange); }
+  .pick-badge{ font-size:10.5px; font-weight:700; color:#8A5A00; background:var(--gold); display:inline-block; padding:2px 8px; border-radius:999px; margin-bottom:8px; }
+  .pick-card h4{ margin:0 0 3px; font-size:14px; }
+  .pick-card span{ font-size:12px; color:var(--ink-soft); }
+
+  .dish-strip{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
+  .dish-trend-chip{ background:var(--olive-soft); color:var(--olive); border:none; padding:6px 13px; border-radius:999px; font-size:12.5px; font-weight:500; display:flex; align-items:center; gap:5px; }
+  .dish-trend-chip:hover{ background:var(--olive); color:white; }
+  .dish-trend-chip b{ font-family:'JetBrains Mono',monospace; font-weight:600; opacity:0.75; }
+
+  .layout{ display:grid; grid-template-columns:340px 1fr; gap:20px; align-items:start; }
+  @media (max-width:880px){ .layout{ grid-template-columns:1fr; } }
+  .sidebar{ background:var(--card); border:1px solid var(--line); border-radius:20px; max-height:640px; overflow-y:auto; padding:10px; box-shadow:var(--shadow); }
+  .list-empty{ padding:40px 20px; text-align:center; color:var(--ink-soft); font-size:14px; }
+  .r-card{ display:flex; gap:12px; padding:12px; border-radius:14px; cursor:pointer; border:1.5px solid transparent; transition:background .18s var(--ease), border-color .18s var(--ease), transform .18s var(--ease); opacity:0; animation:cardIn .5s var(--ease) forwards; }
+  .r-card:hover{ background:var(--paper-deep); }
+  .r-card.selected{ background:var(--orange-soft); border-color:var(--orange); }
+  .r-card:active{ transform:scale(0.98); }
+  .r-emoji{ width:44px;height:44px; flex:none; border-radius:12px; background:var(--olive-soft); display:flex; align-items:center; justify-content:center; font-size:21px; position:relative; }
+  .r-emoji .star-flag{ position:absolute; top:-5px; right:-5px; font-size:12px; }
+  .r-card-body{ min-width:0; flex:1; }
+  .r-card-top{ display:flex; align-items:baseline; justify-content:space-between; gap:6px; }
+  .r-name{ font-weight:600; font-size:14.5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .r-price{ font-family:'JetBrains Mono', monospace; font-size:12px; color:var(--ink-soft); flex:none; }
+  .r-sub{ font-size:12.5px; color:var(--ink-soft); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .r-stars-row{ display:flex; align-items:center; gap:5px; margin-top:6px; }
+  .stars-mini{ font-size:11.5px; letter-spacing:1px; color:var(--gold); }
+  .rating-count{ font-size:11.5px; color:var(--ink-soft); font-family:'JetBrains Mono', monospace; }
+
+  .map-wrap{ position:relative; border-radius:24px; overflow:hidden; border:1px solid var(--line); box-shadow:var(--shadow); background:var(--paper-deep); height:640px; }
+  .map-canvas{ position:absolute; inset:0; }
+  .map-canvas svg{ width:100%; height:100%; display:block; }
+  .zone-label{ font-family:'Fraunces', serif; font-weight:600; font-style:italic; fill:var(--ink); opacity:0.24; letter-spacing:0.04em; }
+  .pins-layer{ position:absolute; inset:0; pointer-events:none; }
+  .pin{ position:absolute; transform:translate(-50%, -100%); pointer-events:auto; cursor:pointer; opacity:0; animation:pinDrop .55s var(--ease) forwards; }
+  .pin-body{ width:40px; height:40px; border-radius:50% 50% 50% 4px; background:var(--orange); transform:rotate(-45deg); display:flex; align-items:center; justify-content:center; box-shadow:0 10px 18px -6px rgba(42,31,23,0.4); border:2.5px solid #FFF3E6; transition:transform .2s var(--ease), box-shadow .2s var(--ease); }
+  .pin-body span{ transform:rotate(45deg); font-size:17px; }
+  .pin.fave .pin-body{ background:var(--gold); box-shadow:0 0 0 6px rgba(255,182,72,0.28), 0 10px 18px -6px rgba(42,31,23,0.4); }
+  .pin:hover .pin-body, .pin.selected .pin-body{ transform:rotate(-45deg) scale(1.16); }
+  .pin-tip{ position:absolute; bottom:100%; left:50%; transform:translate(-50%, -8px); background:var(--ink); color:white; padding:5px 10px; border-radius:8px; font-size:12px; font-weight:500; white-space:nowrap; pointer-events:none; opacity:0; transition:opacity .15s var(--ease); }
+  .pin:hover .pin-tip{ opacity:1; }
+  .map-hint{ position:absolute; top:16px; left:16px; background:rgba(255,248,240,0.92); backdrop-filter:blur(6px); border:1px solid var(--line); border-radius:12px; padding:8px 14px; font-size:12.5px; color:var(--ink-soft); box-shadow:var(--shadow); }
+  .map-empty{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; padding:20px; }
+  .map-empty h3{ margin:0; font-size:20px; }
+  .map-empty p{ margin:0; color:var(--ink-soft); font-size:14px; max-width:280px; }
+
+  .fab{ position:fixed; right:28px; bottom:28px; z-index:40; background:var(--ink); color:white; border:none; border-radius:999px; padding:15px 22px; font-size:14.5px; font-weight:600; display:flex; align-items:center; gap:9px; box-shadow:0 16px 32px -10px rgba(42,31,23,0.5); transition:transform .22s var(--ease), background .22s var(--ease); }
+  .fab:hover{ transform:translateY(-3px); background:var(--orange-deep); }
+  .fab:active{ transform:translateY(0px) scale(0.97); }
+
+  .scrim{ position:fixed; inset:0; background:rgba(42,31,23,0.42); backdrop-filter:blur(2px); opacity:0; pointer-events:none; transition:opacity .35s var(--ease); z-index:75; }
+  .scrim.show{ opacity:1; pointer-events:auto; }
+
+  .drawer{ position:fixed; top:0; right:0; height:100%; width:min(460px, 100%); background:var(--paper); z-index:80; box-shadow:-20px 0 50px -20px rgba(0,0,0,0.35); transform:translateX(100%); transition:transform .45s var(--ease); overflow-y:auto; }
+  .drawer.open{ transform:translateX(0); }
+  @media (max-width:640px){ .drawer{ top:auto; bottom:0; width:100%; height:90%; border-radius:24px 24px 0 0; transform:translateY(100%); } .drawer.open{ transform:translateY(0); } }
+  .drawer-inner{ padding:26px; }
+  .drawer-close{ position:absolute; top:18px; right:18px; width:36px; height:36px; border-radius:50%; border:1.5px solid var(--line); background:var(--card); font-size:18px; color:var(--ink-soft); display:flex; align-items:center; justify-content:center; transition:all .18s var(--ease); }
+  .drawer-close:hover{ background:var(--ink); color:white; border-color:var(--ink); }
+
+  .modal{ position:fixed; inset:0; z-index:85; display:flex; align-items:center; justify-content:center; padding:20px; opacity:0; pointer-events:none; transition:opacity .3s var(--ease); }
+  .modal.open{ opacity:1; pointer-events:auto; }
+  .modal-panel{ background:var(--paper); border-radius:22px; width:min(560px, 100%); max-height:88vh; overflow-y:auto; padding:28px; position:relative; box-shadow:0 40px 80px -20px rgba(0,0,0,0.4); transform:scale(0.92) translateY(10px); transition:transform .35s var(--ease); }
+  .modal.open .modal-panel{ transform:scale(1) translateY(0); }
+  .modal-close{ position:absolute; top:18px; right:18px; width:32px;height:32px;border-radius:50%; border:1.5px solid var(--line); background:var(--card); font-size:16px; color:var(--ink-soft); }
+
+  .d-emoji{ width:56px;height:56px;border-radius:16px;background:var(--olive-soft); display:flex;align-items:center;justify-content:center;font-size:27px; margin-bottom:14px; }
+  .d-title{ font-size:24px; font-weight:700; margin:0 0 4px; display:flex; align-items:center; gap:8px; }
+  .d-meta{ display:flex; align-items:center; gap:10px; color:var(--ink-soft); font-size:13px; margin-bottom:6px; flex-wrap:wrap; }
+  .d-address{ font-size:12.5px; color:var(--ink-soft); margin-bottom:16px; display:flex; gap:6px; align-items:flex-start; }
+  .tag{ background:var(--olive-soft); color:var(--olive); padding:3px 10px; border-radius:999px; font-size:12px; font-weight:500; }
+  .d-desc{ font-size:14.5px; line-height:1.6; color:var(--ink); margin-bottom:18px; }
+  .d-section-title{ font-size:12px; text-transform:uppercase; letter-spacing:0.08em; color:var(--ink-soft); font-weight:600; margin:22px 0 10px; }
+  .d-section-title:first-of-type{ margin-top:0; }
+  .dish-list{ display:flex; flex-wrap:wrap; gap:8px; }
+  .dish-pill{ background:var(--card); border:1.5px solid var(--line); padding:6px 13px; border-radius:999px; font-size:13px; }
+
+  .avg-row{ display:flex; align-items:center; gap:10px; margin-bottom:4px; }
+  .avg-num{ font-family:'Fraunces', serif; font-weight:700; font-size:30px; }
+  .avg-stars{ color:var(--gold); font-size:16px; letter-spacing:2px; }
+
+  .rating-item{ padding:12px 0; border-top:1px solid var(--line); }
+  .rating-item:first-child{ border-top:none; }
+  .rating-item-top{ display:flex; justify-content:space-between; align-items:center; gap:8px; }
+  .rating-name{ font-weight:600; font-size:13.5px; }
+  .rating-stars{ color:var(--gold); font-size:13px; letter-spacing:1px; }
+  .rating-comment{ font-size:13.5px; color:var(--ink-soft); margin-top:4px; line-height:1.5; }
+  .no-ratings{ color:var(--ink-soft); font-size:13.5px; padding:6px 0 4px; }
+  .mini-del{ background:none;border:none;color:var(--danger); font-size:12px; opacity:0.6; }
+  .mini-del:hover{ opacity:1; }
+
+  .rate-form{ margin-top:6px; padding-top:16px; border-top:1.5px dashed var(--line); }
+  .star-input{ display:flex; gap:6px; margin-bottom:12px; }
+  .star-btn{ background:none; border:none; font-size:26px; color:var(--line); transition:transform .15s var(--ease), color .15s var(--ease); padding:0; line-height:1; }
+  .star-btn:hover{ transform:scale(1.15); }
+  .star-btn.on{ color:var(--gold); }
+  .login-gate{ background:var(--paper-deep); border:1.5px dashed var(--line); border-radius:14px; padding:16px; font-size:13.5px; color:var(--ink-soft); text-align:center; }
+
+  .similar-grid{ display:flex; flex-direction:column; gap:8px; }
+  .similar-item{ display:flex; align-items:center; gap:10px; padding:9px; border-radius:12px; border:1.5px solid var(--line); cursor:pointer; transition:all .16s var(--ease); }
+  .similar-item:hover{ border-color:var(--orange); background:var(--paper-deep); }
+  .similar-item .r-emoji{ width:34px;height:34px; font-size:16px; }
+  .similar-item span.si-name{ font-weight:600; font-size:13px; }
+  .similar-item span.si-sub{ display:block; font-size:11.5px; color:var(--ink-soft); }
+
+  .ai-box{ background:linear-gradient(135deg, var(--orange-soft), var(--olive-soft)); border-radius:16px; padding:16px; }
+  .ai-box h4{ margin:0 0 8px; font-size:13.5px; display:flex; align-items:center; gap:6px; }
+  .ai-input-row{ display:flex; gap:8px; }
+  .ai-input-row input{ flex:1; }
+  .ai-btn{ background:var(--ink); color:white; border:none; border-radius:10px; padding:0 14px; font-size:13px; font-weight:600; }
+  .ai-result{ margin-top:12px; font-size:13.5px; line-height:1.55; background:rgba(255,255,255,0.6); border-radius:10px; padding:12px; display:none; }
+  .ai-result.show{ display:block; }
+
+  .delete-row{ margin-top:26px; padding-top:16px; border-top:1px solid var(--line); }
+  .delete-btn{ background:none; border:none; color:var(--danger); font-size:13px; font-weight:600; display:flex; align-items:center; gap:6px; opacity:0.75; }
+  .delete-btn:hover{ opacity:1; }
+
+  .price-toggle{ display:flex; gap:8px; }
+  .price-toggle button{ flex:1; border:1.5px solid var(--line); background:var(--card); border-radius:10px; padding:10px; font-family:'JetBrains Mono', monospace; font-weight:600; color:var(--ink-soft); transition:all .16s var(--ease); }
+  .price-toggle button.on{ background:var(--ink); border-color:var(--ink); color:white; }
+  .chip-input-row{ display:flex; gap:8px; }
+  .chip-input-row .field{ flex:1; }
+  .chip-add-btn{ background:var(--olive); color:white; border:none; border-radius:10px; padding:0 16px; font-size:13px; font-weight:600; }
+  .dish-chips{ display:flex; flex-wrap:wrap; gap:7px; margin-top:10px; }
+  .dish-chip{ background:var(--olive-soft); color:var(--olive); padding:5px 8px 5px 12px; border-radius:999px; font-size:12.5px; display:flex; align-items:center; gap:6px; }
+  .dish-chip button{ background:none; border:none; color:var(--olive); font-size:13px; opacity:0.7; }
+
+  .addr-search-wrap{ position:relative; }
+  .addr-results{ position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--card); border:1.5px solid var(--line); border-radius:12px; box-shadow:var(--shadow); z-index:10; max-height:220px; overflow-y:auto; }
+  .addr-result-item{ padding:10px 13px; font-size:13px; cursor:pointer; border-bottom:1px solid var(--line); }
+  .addr-result-item:last-child{ border-bottom:none; }
+  .addr-result-item:hover{ background:var(--paper-deep); }
+  .addr-result-item b{ display:block; font-size:13px; }
+  .addr-result-item span{ font-size:11.5px; color:var(--ink-soft); }
+  .addr-status{ font-size:12px; color:var(--ink-soft); margin-top:6px; min-height:14px; }
+
+  .mini-map{ position:relative; width:100%; aspect-ratio:16/9.5; border-radius:14px; overflow:hidden; border:1.5px solid var(--line); cursor:crosshair; margin-bottom:6px; background:var(--paper-deep); }
+  .mini-map svg{ width:100%; height:100%; display:block; }
+  .mini-pin{ position:absolute; width:26px; height:26px; transform:translate(-50%,-100%); pointer-events:none; }
+  .mini-pin-body{ width:26px;height:26px;border-radius:50% 50% 50% 3px;background:var(--orange); transform:rotate(-45deg); border:2px solid #FFF3E6; box-shadow:0 6px 12px -4px rgba(0,0,0,0.4); animation:pinDrop .4s var(--ease) forwards; }
+  .drop-hint{ font-size:12px; color:var(--ink-soft); margin:6px 0 10px; }
+  .zone-caught{ font-weight:600; color:var(--orange-deep); }
+
+  /* ---------- Admin ---------- */
+  .admin-head{ padding:30px 0 10px; }
+  .admin-stats{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:28px; }
+  @media (max-width:800px){ .admin-stats{ grid-template-columns:1fr 1fr; } }
+  .stat-card{ background:var(--card); border:1.5px solid var(--line); border-radius:16px; padding:18px; }
+  .stat-card b{ display:block; font-family:'Fraunces',serif; font-size:26px; }
+  .stat-card span{ font-size:12px; color:var(--ink-soft); }
+  .admin-panel{ background:var(--card); border:1.5px solid var(--line); border-radius:18px; padding:18px; margin-bottom:20px; }
+  .admin-panel h3{ font-size:15px; margin:0 0 14px; }
+  .admin-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:11px 4px; border-top:1px solid var(--line); font-size:13.5px; }
+  .admin-row:first-of-type{ border-top:none; }
+  .admin-row .ar-main{ min-width:0; }
+  .admin-row .ar-main b{ display:block; font-size:13.5px; }
+  .admin-row .ar-main span{ font-size:12px; color:var(--ink-soft); }
+  .admin-row .ar-actions{ display:flex; gap:8px; flex:none; }
+  .mini-btn{ border:1.5px solid var(--line); background:var(--card); border-radius:8px; padding:6px 11px; font-size:12px; font-weight:600; color:var(--ink-soft); }
+  .mini-btn:hover{ border-color:var(--orange); color:var(--orange-deep); }
+  .mini-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
+  .mini-btn.on{ background:var(--gold); border-color:var(--gold); color:#3A2400; }
+  .empty-note{ color:var(--ink-soft); font-size:13px; padding:10px 4px; }
+
+  .toast{ position:fixed; bottom:28px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--ink); color:white; padding:12px 20px; border-radius:999px; font-size:13.5px; font-weight:500; opacity:0; pointer-events:none; z-index:95; transition:all .35s var(--ease); display:flex; align-items:center; gap:8px; max-width:90%; text-align:center; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .loading-screen{ display:flex; align-items:center; justify-content:center; height:300px; color:var(--ink-soft); font-size:14px; gap:10px; }
+  .spin{ width:16px; height:16px; border:2px solid var(--line); border-top-color:var(--orange); border-radius:50%; animation:spin .7s linear infinite; }
+
+  @keyframes cardIn{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:translateY(0); } }
+  @keyframes pinDrop{ 0%{ opacity:0; transform:translate(-50%,-140%) scale(0.3); } 70%{ opacity:1; transform:translate(-50%,-100%) scale(1.12); } 100%{ opacity:1; transform:translate(-50%,-100%) scale(1); } }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce){ *{ animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
+</style>
+</head>
+<body>
+<div style="background:#2b1d14;color:#fde9d6;font:500 13px/1.4 Inter,system-ui,sans-serif;text-align:center;padding:8px 14px">Demo version: the places and reviews are samples, and anything you add is saved only in this browser.</div>
+
+
+<nav class="navbar">
+  <button class="nav-brand" id="navBrandBtn">
+    <span class="pin-mark"><svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2C7.58 2 4 5.58 4 10c0 5.25 6.72 11.05 7.01 11.3.29.24.69.24.98 0C12.28 21.05 19 15.25 19 10c0-4.42-3.58-8-7-8zm0 10.5A2.5 2.5 0 1 1 12 7.5a2.5 2.5 0 0 1 0 5z" fill="white"/></svg></span>
+    Ben's Places
+  </button>
+  <div class="nav-mid">
+    <button class="nav-link" data-nav="app">Explore map</button>
+    <button class="nav-link hidden" data-nav="admin" id="navAdminBtn">Admin</button>
+  </div>
+  <div class="nav-right" id="navRight"></div>
+</nav>
+
+<!-- LANDING -->
+<section class="app-shell view" id="view-landing">
+  <div class="hero">
+    <div>
+      <div class="eyebrow">🍊 A map worth trusting</div>
+      <h1>Every table Ben has loved,<br><em>rated by the people</em> who went too.</h1>
+      <p class="lede">Ben logs the real places, the dish worth ordering, and why it's worth the trip. Anyone can add their own find, drop a real pin, and rate what they tried.</p>
+      <div class="hero-ctas">
+        <button class="btn-primary" id="ctaExplore">Explore the map</button>
+        <button class="btn-secondary" id="ctaSignup">Create an account</button>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><b id="statPlaces">–</b><span>places logged</span></div>
+        <div class="hero-stat"><b id="statRatings">–</b><span>ratings left</span></div>
+        <div class="hero-stat"><b id="statCuisines">–</b><span>cuisines covered</span></div>
+      </div>
+    </div>
+    <div class="hero-art">
+      <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="46" fill="var(--orange-soft)" opacity="0.5"/>
+        <circle cx="50" cy="50" r="34" fill="var(--olive-soft)" opacity="0.6"/>
+        <g stroke="#F3E2C9" stroke-width="1.4" fill="none">
+          <path d="M8 40 Q 50 30 92 42"/><path d="M8 62 Q 50 72 92 58"/><path d="M30 8 Q 38 50 26 92"/>
+        </g>
+        <g>
+          <path d="M50 30c-6 0-11 5-11 11 0 8 11 19 11 19s11-11 11-19c0-6-5-11-11-11z" fill="var(--orange)"/>
+          <circle cx="50" cy="41" r="4.4" fill="#FFF3E6"/>
+        </g>
+        <g transform="translate(22,58)">
+          <path d="M0 6c0-4 3-7 7-7s7 3 7 7c0 5-7 12-7 12s-7-7-7-12z" fill="var(--gold)"/>
+        </g>
+        <g transform="translate(68,20)">
+          <path d="M0 5c0-3.5 2.5-6 6-6s6 2.5 6 6c0 4.3-6 10.4-6 10.4S0 9.3 0 5z" fill="var(--olive)"/>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <div class="section-label">What's inside</div>
+  <h2 class="section-title">Not just a list — a living map with a brain.</h2>
+  <div class="features-grid" id="featuresGrid"></div>
+
+  <div class="section-label">How it works</div>
+  <h2 class="section-title">From tap to table in three steps.</h2>
+  <div class="howit">
+    <div class="howit-step"><div class="howit-num">01</div><h3>Search the real address</h3><p>Type a name or street and we look it up for real — no guessing coordinates.</p></div>
+    <div class="howit-step"><div class="howit-num">02</div><h3>Add your take</h3><p>Cuisine, price, your honest description, and the dishes worth ordering.</p></div>
+    <div class="howit-step"><div class="howit-num">03</div><h3>Let the map do the rest</h3><p>Other people rate it, the algorithm ranks it, and Ben's AI helps decide what to order.</p></div>
+  </div>
+
+  <div class="landing-footer">
+    <span>Ben's Places · a personal food map, open to everyone with the link</span>
+    <span>Built with Claude</span>
+  </div>
+</section>
+
+<!-- AUTH -->
+<section class="app-shell view hidden" id="view-auth">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Sign in</button>
+        <button class="auth-tab" data-tab="signup">Sign up</button>
+      </div>
+
+      <form id="loginForm">
+        <div class="auth-error" id="loginError"></div>
+        <label for="li-username">Username</label>
+        <input class="field" id="li-username" required autocomplete="username" />
+        <label for="li-password">Password</label>
+        <input class="field" id="li-password" type="password" required autocomplete="current-password" />
+        <button class="submit-btn" type="submit">Sign in</button>
+        <div class="auth-switch">No account yet? <button type="button" class="link-btn" data-tab="signup">Sign up</button></div>
+      </form>
+
+      <form id="signupForm" class="hidden">
+        <div class="auth-error" id="signupError"></div>
+        <label for="su-username">Username</label>
+        <input class="field" id="su-username" required autocomplete="username" placeholder="e.g. ben, or admin" />
+        <div class="auth-hint" id="adminHint" style="display:none;">The username <b>admin</b> automatically gets admin controls once you set a password for it below.</div>
+        <label for="su-email">Email <span style="text-transform:none; font-weight:400;">(for your profile — not used to sign in)</span></label>
+        <input class="field" id="su-email" type="email" required autocomplete="email" />
+        <label for="su-password">Password</label>
+        <input class="field" id="su-password" type="password" required autocomplete="new-password" minlength="4" />
+        <div class="auth-hint">Stored as a salted hash in this app's shared storage — not a real production auth system, so please don't reuse a password you use elsewhere.</div>
+        <button class="submit-btn" type="submit">Create account</button>
+        <div class="auth-switch">Already have one? <button type="button" class="link-btn" data-tab="login">Sign in</button></div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- APP -->
+<section class="app-shell view hidden" id="view-app">
+  <div class="view-app-inner">
+    <div class="strip-title" id="picksStripTitle" style="display:none;">⭐ Ben's Editor's Picks</div>
+    <div class="picks-strip" id="picksStrip"></div>
+
+    <div class="dish-strip" id="dishStrip"></div>
+
+    <div class="controls">
+      <div class="search-box">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        <input type="text" id="searchInput" placeholder="Search places, dishes, cuisines…" />
+      </div>
+      <div class="chips" id="chipRow"></div>
+      <select class="sort-select" id="sortSelect">
+        <option value="recommended">Sort: Recommended</option>
+        <option value="top">Sort: Top rated</option>
+        <option value="reviewed">Sort: Most reviewed</option>
+        <option value="new">Sort: Newest</option>
+      </select>
+    </div>
+
+    <div class="layout">
+      <aside class="sidebar" id="sidebar"><div class="loading-screen"><div class="spin"></div>Loading the map…</div></aside>
+      <main class="map-wrap">
+        <div class="map-canvas" id="mapCanvas"></div>
+        <div class="pins-layer" id="pinsLayer"></div>
+        <div class="map-hint">🗺️ Click a pin or a card to see the details</div>
+        <div class="map-empty hidden" id="mapEmpty"><h3>No pins yet</h3><p>Add the first place you love and drop a pin for it.</p></div>
+      </main>
+    </div>
+  </div>
+</section>
+
+<!-- ADMIN -->
+<section class="app-shell view hidden" id="view-admin">
+  <div class="admin-head">
+    <div class="section-label">Admin</div>
+    <h2 class="section-title" style="margin-bottom:20px;">Everything happening on Ben's Places.</h2>
+  </div>
+  <div class="admin-stats" id="adminStats"></div>
+  <div class="admin-panel">
+    <h3>Places</h3>
+    <div id="adminPlaces"></div>
+  </div>
+  <div class="admin-panel">
+    <h3>Ratings</h3>
+    <div id="adminRatings"></div>
+  </div>
+  <div class="admin-panel">
+    <h3>Users</h3>
+    <div id="adminUsers"></div>
+  </div>
+</section>
+
+<button class="fab hidden" id="addBtn">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg>
+  Add a place
+</button>
+
+<div class="scrim" id="scrim"></div>
+
+<div class="drawer" id="drawer" aria-hidden="true">
+  <div class="drawer-inner" id="drawerContent"></div>
+  <button class="drawer-close" id="drawerCloseBtn">✕</button>
+</div>
+
+<div class="modal" id="addModal" aria-hidden="true">
+  <div class="modal-panel">
+    <button class="modal-close" id="modalCloseBtn">✕</button>
+    <h2 class="display" style="margin:0 0 4px; font-size:22px;">Add a place</h2>
+    <p style="margin:0 0 16px; color:var(--ink-soft); font-size:13.5px;">Search for the real address, or drop the pin yourself.</p>
+
+    <label for="addrSearch">Search for the place</label>
+    <div class="addr-search-wrap">
+      <input class="field" id="addrSearch" autocomplete="off" placeholder="Start typing an address or place name…" />
+      <div class="addr-results hidden" id="addrResults"></div>
+    </div>
+    <div class="addr-status" id="addrStatus"></div>
+
+    <div class="mini-map" id="miniMap"></div>
+    <div class="drop-hint" id="dropHint">Pick a search result above, or tap the map to place the pin yourself.</div>
+
+    <form id="addForm">
+      <label for="f-name">Name</label>
+      <input class="field" id="f-name" required placeholder="e.g. Nonna's Kitchen" />
+      <label for="f-address">Address</label>
+      <input class="field" id="f-address" placeholder="Filled in automatically from search, or type it yourself" />
+      <label for="f-cuisine">Cuisine</label>
+      <input class="field" id="f-cuisine" list="cuisineOptions" required placeholder="e.g. Italian, Ramen, Café…" />
+      <datalist id="cuisineOptions"></datalist>
+      <label>Price</label>
+      <div class="price-toggle" id="priceToggle">
+        <button type="button" data-price="1">$</button>
+        <button type="button" data-price="2">$$</button>
+        <button type="button" data-price="3">$$$</button>
+      </div>
+      <label for="f-desc">Your take on it</label>
+      <textarea class="field" id="f-desc" required placeholder="What makes this place worth going back to?"></textarea>
+      <label for="f-dish">Favourite dishes</label>
+      <div class="chip-input-row">
+        <input class="field" id="f-dish" placeholder="Type a dish, press Enter" />
+        <button type="button" class="chip-add-btn" id="dishAddBtn">Add</button>
+      </div>
+      <div class="dish-chips" id="dishChips"></div>
+      <button type="submit" class="submit-btn" id="submitAddBtn" disabled>Drop the pin</button>
+    </form>
+  </div>
+</div>
+
+<div class="modal" id="reviewsModal" aria-hidden="true">
+  <div class="modal-panel">
+    <button class="modal-close" id="reviewsCloseBtn">✕</button>
+    <h2 class="display" style="margin:0 0 16px; font-size:22px;">My reviews</h2>
+    <div id="myReviewsList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* Standalone version: stands in for Claude's artifact storage using this browser's localStorage. */
+(function(){
+  if (window.storage) return;
+  var P='bensplaces:';
+  function ls(){ try{ return window.localStorage; }catch(e){ return null; } }
+  var mem={};
+  function g(k){ var l=ls(); return l? l.getItem(P+k) : (k in mem? mem[k] : null); }
+  function st(k,v){ var l=ls(); if(l) l.setItem(P+k,v); else mem[k]=v; }
+  function del(k){ var l=ls(); if(l) l.removeItem(P+k); else delete mem[k]; }
+  function keys(){ var l=ls(),out=[]; if(l){ for(var i=0;i<l.length;i++){ var k=l.key(i); if(k&&k.indexOf(P)===0) out.push(k.slice(P.length)); } } else out=Object.keys(mem); return out; }
+  window.storage={
+    get:function(k){ return Promise.resolve().then(function(){ var v=g(k); return v==null? null : {key:k,value:v}; }); },
+    set:function(k,v){ return Promise.resolve().then(function(){ st(k,v); return {key:k,value:v}; }); },
+    delete:function(k){ return Promise.resolve().then(function(){ del(k); return {key:k,deleted:true}; }); },
+    list:function(prefix){ return Promise.resolve().then(function(){ return {keys:keys().filter(function(k){ return !prefix||k.indexOf(prefix)===0; })}; }); }
+  };
+})();
+</script>
+<script>
+(function(){
+  // ================= Constants & helpers =================
+  var CUISINE_EMOJI = {
+    italian:'🍝', pizza:'🍕', ramen:'🍜', japanese:'🍣', sushi:'🍣', chinese:'🥡',
+    mexican:'🌮', taco:'🌮', indian:'🍛', thai:'🍲', korean:'🍚', bbq:'🍖',
+    cafe:'☕', coffee:'☕', bakery:'🥐', dessert:'🍰', burger:'🍔', seafood:'🦞',
+    steak:'🥩', vegan:'🥗', vegetarian:'🥗', french:'🥖', greek:'🥙', breakfast:'🍳',
+    brunch:'🍳', tapas:'🍤', wine:'🍷', bar:'🍸', noodles:'🍜', vietnamese:'🍜'
+  };
+  function emojiFor(cuisine){
+    var key = (cuisine||'').toLowerCase().trim();
+    for (var k in CUISINE_EMOJI){ if (key.indexOf(k) !== -1) return CUISINE_EMOJI[k]; }
+    return '🍽️';
+  }
+  function uid(prefix){ return prefix + '_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+  function escapeHtml(s){ return (s||'').replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+  function debounce(fn, wait){ var t; return function(){ var a=arguments,c=this; clearTimeout(t); t=setTimeout(function(){ fn.apply(c,a); }, wait); }; }
+  function bytesToHex(b){ return Array.prototype.map.call(b, function(x){ return x.toString(16).padStart(2,'0'); }).join(''); }
+
+  var ZONES = [
+    { name:'Old Town', cx:22, cy:28 }, { name:'Riverside', cx:70, cy:22 },
+    { name:'Market Square', cx:47, cy:50 }, { name:'Harbor', cx:78, cy:72 }, { name:'Uptown', cx:20, cy:75 }
+  ];
+  function nearestZone(x,y){
+    var best=ZONES[0], bestD=Infinity;
+    ZONES.forEach(function(z){ var d=Math.pow(z.cx-x,2)+Math.pow(z.cy-y,2); if(d<bestD){ bestD=d; best=z; } });
+    return best.name;
+  }
+  function mapSvg(){
+    return '<svg viewBox="0 0 100 62" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' +
+      '<rect width="100" height="62" fill="var(--paper-deep)"/>' +
+      '<path d="M0 34 C 20 30, 30 42, 50 36 S 80 26, 100 32" stroke="var(--olive-soft)" stroke-width="7" fill="none" opacity="0.6"/>' +
+      '<g stroke="#F3E2C9" stroke-width="1.6" fill="none" opacity="0.9">' +
+        '<path d="M0 14 Q 50 6 100 16"/><path d="M0 46 Q 50 54 100 44"/><path d="M16 0 Q 24 30 12 62"/><path d="M62 0 Q 70 30 82 62"/><path d="M-5 30 Q 50 22 105 30"/>' +
+      '</g>' +
+      ZONES.map(function(z){ return '<text class="zone-label" x="'+z.cx+'" y="'+z.cy+'" font-size="4.6" text-anchor="middle">'+z.name+'</text>'; }).join('') +
+    '</svg>';
+  }
+  function projectPoints(pts){
+    if(!pts.length) return [];
+    var lats=pts.map(function(p){return p.lat;}), lons=pts.map(function(p){return p.lon;});
+    var minLat=Math.min.apply(null,lats), maxLat=Math.max.apply(null,lats);
+    var minLon=Math.min.apply(null,lons), maxLon=Math.max.apply(null,lons);
+    var latR=(maxLat-minLat)||0.01, lonR=(maxLon-minLon)||0.01;
+    return pts.map(function(p){
+      return { x:((p.lon-minLon)/lonR)*70+15, y:((maxLat-p.lat)/latR)*70+15 };
+    });
+  }
+
+  // ================= State =================
+  var restaurants = [];
+  var ratingsCache = {};
+  var users = [];
+  var currentUser = null; // {username,email,isAdmin} — in-memory only, resets on refresh
+  var selectedId = null;
+  var activeChip = 'All';
+  var searchTerm = '';
+  var sortMode = 'recommended';
+  var pendingPin = null; // {x,y,lat,lon,address}
+  var dishDraft = [];
+
+  var toastEl = document.getElementById('toast');
+  function showToast(msg){
+    toastEl.textContent = msg; toastEl.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(function(){ toastEl.classList.remove('show'); }, 2800);
+  }
+
+  // ================= Storage =================
+  async function loadRestaurants(){
+    try{
+      var listing = await window.storage.list('restaurant:', true);
+      if (!listing || !listing.keys || !listing.keys.length) return [];
+      var out = [];
+      for (var i=0;i<listing.keys.length;i++){
+        try{ var r = await window.storage.get(listing.keys[i], true); if (r && r.value) out.push(JSON.parse(r.value)); }catch(e){}
+      }
+      return out;
+    }catch(e){ return []; }
+  }
+  async function loadRatingsFor(restaurantId){
+    try{
+      var listing = await window.storage.list('rating:'+restaurantId+':', true);
+      if (!listing || !listing.keys || !listing.keys.length) return [];
+      var out = [];
+      for (var i=0;i<listing.keys.length;i++){
+        try{ var r = await window.storage.get(listing.keys[i], true); if (r && r.value) out.push(JSON.parse(r.value)); }catch(e){}
+      }
+      out.sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); });
+      return out;
+    }catch(e){ return []; }
+  }
+  async function loadUsers(){
+    try{
+      var listing = await window.storage.list('user:', true);
+      if (!listing || !listing.keys || !listing.keys.length) return [];
+      var out = [];
+      for (var i=0;i<listing.keys.length;i++){
+        try{ var r = await window.storage.get(listing.keys[i], true); if (r && r.value) out.push(JSON.parse(r.value)); }catch(e){}
+      }
+      return out;
+    }catch(e){ return []; }
+  }
+  async function saveRestaurant(obj){ await window.storage.set('restaurant:'+obj.id, JSON.stringify(obj), true); }
+  async function deleteRestaurantKey(id){
+    try{ await window.storage.delete('restaurant:'+id, true); }catch(e){}
+    try{
+      var listing = await window.storage.list('rating:'+id+':', true);
+      if (listing && listing.keys) for (var i=0;i<listing.keys.length;i++){ try{ await window.storage.delete(listing.keys[i], true); }catch(e){} }
+    }catch(e){}
+  }
+  async function saveRating(restaurantId, obj){ await window.storage.set('rating:'+restaurantId+':'+obj.id, JSON.stringify(obj), true); }
+  async function deleteRatingKey(restaurantId, ratingId){ try{ await window.storage.delete('rating:'+restaurantId+':'+ratingId, true); }catch(e){} }
+  async function saveUser(obj){ await window.storage.set('user:'+obj.username.toLowerCase(), JSON.stringify(obj), true); }
+
+  function avgRating(list){ if(!list||!list.length) return null; var s=0; list.forEach(function(r){ s+=r.stars; }); return s/list.length; }
+  function starString(avg, size){
+    size = size||5;
+    if (avg===null) return '☆☆☆☆☆';
+    var full = Math.round(avg), s='';
+    for (var i=0;i<size;i++) s += i<full ? '★' : '☆';
+    return s;
+  }
+
+  // ================= Recommendation algorithm =================
+  var MIN_VOTES = 3;
+  function globalAverage(){
+    var sum=0, n=0;
+    restaurants.forEach(function(r){ (ratingsCache[r.id]||[]).forEach(function(rt){ sum+=rt.stars; n++; }); });
+    return n ? sum/n : 4.2;
+  }
+  function recommendedScore(r){
+    var ratings = ratingsCache[r.id]||[];
+    var v = ratings.length, R = avgRating(ratings)||0, C = globalAverage(), m = MIN_VOTES;
+    var base = (v/(v+m))*R + (m/(v+m))*C;
+    return base + (r.featured ? 0.35 : 0);
+  }
+  function similarityScore(a,b){
+    var score = a.cuisine.toLowerCase()===b.cuisine.toLowerCase() ? 2 : 0;
+    var ad=(a.dishes||[]).map(function(d){return d.toLowerCase();});
+    var bd=(b.dishes||[]).map(function(d){return d.toLowerCase();});
+    ad.forEach(function(d){ if(bd.indexOf(d)!==-1) score+=1; });
+    if (Math.abs(a.price-b.price)<=1) score+=0.5;
+    return score;
+  }
+  function similarTo(r, n){
+    return restaurants.filter(function(x){ return x.id!==r.id; })
+      .map(function(x){ return { r:x, score: similarityScore(r,x) }; })
+      .filter(function(s){ return s.score>0; })
+      .sort(function(a,b){ return b.score-a.score; })
+      .slice(0, n||3);
+  }
+  function trendingDishes(n){
+    var freq = {};
+    restaurants.forEach(function(r){ (r.dishes||[]).forEach(function(d){
+      var k = d.trim(); if(!k) return; var kk = k.toLowerCase();
+      freq[kk] = freq[kk] || { label:k, count:0 }; freq[kk].count++;
+    }); });
+    return Object.values(freq).sort(function(a,b){ return b.count-a.count; }).slice(0, n||8);
+  }
+
+  // ================= Auth (client-side, disclosed as demo-grade) =================
+  async function hashPassword(password, existingSalt){
+    var salt = existingSalt || bytesToHex(crypto.getRandomValues(new Uint8Array(16)));
+    var enc = new TextEncoder();
+    var digest = await crypto.subtle.digest('SHA-256', enc.encode(salt+':'+password));
+    return { hash: bytesToHex(new Uint8Array(digest)), salt: salt };
+  }
+
+  document.getElementById('su-username').addEventListener('input', function(e){
+    document.getElementById('adminHint').style.display = e.target.value.trim().toLowerCase()==='admin' ? 'block' : 'none';
+  });
+
+  document.getElementById('signupForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var errEl = document.getElementById('signupError'); errEl.classList.remove('show');
+    var username = document.getElementById('su-username').value.trim();
+    var email = document.getElementById('su-email').value.trim();
+    var password = document.getElementById('su-password').value;
+    if (!username || !email || !password){ errEl.textContent='Fill in every field.'; errEl.classList.add('show'); return; }
+    if (password.length < 4){ errEl.textContent='Password needs at least 4 characters.'; errEl.classList.add('show'); return; }
+    if (!/^[a-zA-Z0-9_.-]{2,24}$/.test(username)){ errEl.textContent='Usernames can only use letters, numbers, _ . -'; errEl.classList.add('show'); return; }
+    try{
+      var existing = await window.storage.get('user:'+username.toLowerCase(), true).catch(function(){ return null; });
+      if (existing){ errEl.textContent='That username is already taken.'; errEl.classList.add('show'); return; }
+      var hp = await hashPassword(password);
+      var isAdmin = username.toLowerCase()==='admin';
+      var obj = { username:username, email:email, hash:hp.hash, salt:hp.salt, isAdmin:isAdmin, createdAt:Date.now() };
+      await saveUser(obj);
+      users.push(obj);
+      currentUser = { username:obj.username, email:obj.email, isAdmin:obj.isAdmin };
+      showToast(isAdmin ? 'Welcome, admin — you now have admin controls.' : 'Account created — welcome!');
+      renderNav(); switchView('app');
+    }catch(err){ errEl.textContent="Couldn't create that account — try again."; errEl.classList.add('show'); }
+  });
+
+  document.getElementById('loginForm').addEventListener('submit', async function(e){
+    e.preventDefault();
+    var errEl = document.getElementById('loginError'); errEl.classList.remove('show');
+    var username = document.getElementById('li-username').value.trim();
+    var password = document.getElementById('li-password').value;
+    try{
+      var rec = await window.storage.get('user:'+username.toLowerCase(), true).catch(function(){ return null; });
+      if (!rec && username.toLowerCase()==='admin'){
+        // Self-healing bootstrap: if the admin account never got created (e.g. init-time
+        // seeding failed silently), create it right now using whatever password was typed.
+        var hpBoot = await hashPassword(password);
+        var bootObj = { username:'admin', email:'admin@bensplaces.local', hash:hpBoot.hash, salt:hpBoot.salt, isAdmin:true, createdAt:Date.now() };
+        await saveUser(bootObj);
+        users.push(bootObj);
+        rec = { value: JSON.stringify(bootObj) };
+      }
+      if (!rec){ errEl.textContent='No account with that username.'; errEl.classList.add('show'); return; }
+      var user = JSON.parse(rec.value);
+      var hp = await hashPassword(password, user.salt);
+      if (hp.hash !== user.hash){ errEl.textContent='Incorrect password.'; errEl.classList.add('show'); return; }
+      currentUser = { username:user.username, email:user.email, isAdmin:user.isAdmin };
+      showToast('Signed in as '+user.username+'.');
+      renderNav(); switchView('app');
+    }catch(err){ errEl.textContent="Couldn't sign in — try again."; errEl.classList.add('show'); }
+  });
+
+  document.querySelectorAll('[data-tab]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var tab = btn.getAttribute('data-tab');
+      document.querySelectorAll('.auth-tab').forEach(function(t){ t.classList.toggle('active', t.getAttribute('data-tab')===tab); });
+      document.getElementById('loginForm').classList.toggle('hidden', tab!=='login');
+      document.getElementById('signupForm').classList.toggle('hidden', tab!=='signup');
+    });
+  });
+
+  function logOut(){ currentUser=null; showToast('Signed out.'); renderNav(); switchView('landing'); }
+
+  // ================= Views & Nav =================
+  var VIEWS = ['landing','auth','app','admin'];
+  function switchView(name, opts){
+    opts = opts || {};
+    VIEWS.forEach(function(v){ document.getElementById('view-'+v).classList.toggle('hidden', v!==name); });
+    document.querySelectorAll('.nav-link').forEach(function(b){ b.classList.toggle('active', b.getAttribute('data-nav')===name); });
+    document.getElementById('addBtn').classList.toggle('hidden', name!=='app');
+    if (opts.authTab){
+      document.querySelectorAll('[data-tab]').forEach(function(btn){ if(btn.classList.contains('auth-tab')) btn.classList.toggle('active', btn.getAttribute('data-tab')===opts.authTab); });
+      document.getElementById('loginForm').classList.toggle('hidden', opts.authTab!=='login');
+      document.getElementById('signupForm').classList.toggle('hidden', opts.authTab!=='signup');
+    }
+    if (name==='admin') renderAdmin();
+    window.scrollTo({top:0, behavior:'smooth'});
+  }
+  function requireAuth(actionLabel){
+    if (currentUser) return true;
+    showToast('Sign in to '+actionLabel+'.');
+    switchView('auth', {authTab:'login'});
+    return false;
+  }
+  function renderNav(){
+    var right = document.getElementById('navRight');
+    document.getElementById('navAdminBtn').classList.toggle('hidden', !(currentUser && currentUser.isAdmin));
+    if (currentUser){
+      right.innerHTML =
+        '<div class="user-chip"><div class="user-avatar">'+escapeHtml(currentUser.username[0].toUpperCase())+'</div>'+
+        escapeHtml(currentUser.username)+(currentUser.isAdmin?'<span class="admin-badge">ADMIN</span>':'')+'</div>'+
+        '<button class="btn-ghost-nav" id="myReviewsBtn">My reviews</button>'+
+        '<button class="btn-ghost-nav" id="logoutBtn">Sign out</button>';
+      document.getElementById('myReviewsBtn').addEventListener('click', openMyReviews);
+      document.getElementById('logoutBtn').addEventListener('click', logOut);
+    } else {
+      right.innerHTML = '<button class="btn-ghost-nav" id="navSignin">Sign in</button><button class="btn-solid-nav" id="navSignup">Sign up</button>';
+      document.getElementById('navSignin').addEventListener('click', function(){ switchView('auth',{authTab:'login'}); });
+      document.getElementById('navSignup').addEventListener('click', function(){ switchView('auth',{authTab:'signup'}); });
+    }
+  }
+  document.getElementById('navBrandBtn').addEventListener('click', function(){ switchView('landing'); });
+  document.querySelectorAll('.nav-link').forEach(function(btn){ btn.addEventListener('click', function(){ switchView(btn.getAttribute('data-nav')); }); });
+  document.getElementById('ctaExplore').addEventListener('click', function(){ switchView('app'); });
+  document.getElementById('ctaSignup').addEventListener('click', function(){ switchView('auth', {authTab:'signup'}); });
+
+  // ================= Landing content =================
+  var FEATURES = [
+    {ico:'📍', t:'Real address lookup', d:'Search finds the actual place via OpenStreetMap and drops an accurate pin.'},
+    {ico:'🧮', t:'A real ranking algorithm', d:'Recommended sort weighs rating and review count so one 5-star fluke can\'t win.'},
+    {ico:'🍽️', t:'Dish-level detail', d:'Every place lists the specific dishes worth ordering, not just a star count.'},
+    {ico:'🤝', t:'Community ratings', d:'Anyone with an account can rate and review — Ben\'s taste, checked by everyone else\'s.'},
+    {ico:'🔥', t:'Trending dishes', d:'See which dishes keep getting mentioned across every place on the map.'},
+    {ico:'🧭', t:'Similar places', d:'Open a place and see others like it, matched by cuisine, dishes, and price.'},
+    {ico:'✨', t:'Ask the AI', d:'Tell it your mood and Claude suggests what to order, from the actual menu notes.'},
+    {ico:'⭐', t:"Editor's picks", d:'Ben can feature the places that deserve to be seen first.'},
+    {ico:'🛡️', t:'Admin moderation', d:'Remove spam places or ratings without touching the rest of the map.'}
+  ];
+  document.getElementById('featuresGrid').innerHTML = FEATURES.map(function(f){
+    return '<div class="feature-card"><div class="feature-ico">'+f.ico+'</div><h3>'+f.t+'</h3><p>'+f.d+'</p></div>';
+  }).join('');
+
+  // ================= List / Map rendering =================
+  var sidebar = document.getElementById('sidebar');
+  var pinsLayer = document.getElementById('pinsLayer');
+  var mapCanvas = document.getElementById('mapCanvas');
+  var mapEmpty = document.getElementById('mapEmpty');
+  var chipRow = document.getElementById('chipRow');
+  mapCanvas.innerHTML = mapSvg();
+
+  function currentCuisines(){ var set={}; restaurants.forEach(function(r){ set[r.cuisine]=true; }); return Object.keys(set).sort(); }
+  function renderChips(){
+    var cuisines = currentCuisines();
+    var html = '<button class="chip'+(activeChip==='All'?' active':'')+'" data-chip="All">All</button>';
+    cuisines.forEach(function(c){ html += '<button class="chip'+(activeChip===c?' active':'')+'" data-chip="'+escapeHtml(c)+'">'+escapeHtml(c)+'</button>'; });
+    chipRow.innerHTML = html;
+    chipRow.querySelectorAll('.chip').forEach(function(btn){ btn.addEventListener('click', function(){ activeChip = btn.getAttribute('data-chip'); renderChips(); renderAll(); }); });
+  }
+  function filteredSorted(){
+    var term = searchTerm.trim().toLowerCase();
+    var list = restaurants.filter(function(r){
+      if (activeChip!=='All' && r.cuisine!==activeChip) return false;
+      if (!term) return true;
+      var hay = (r.name+' '+r.cuisine+' '+(r.dishes||[]).join(' ')).toLowerCase();
+      return hay.indexOf(term)!==-1;
+    });
+    if (sortMode==='top') list.sort(function(a,b){ return (avgRating(ratingsCache[b.id])||0)-(avgRating(ratingsCache[a.id])||0); });
+    else if (sortMode==='reviewed') list.sort(function(a,b){ return (ratingsCache[b.id]||[]).length-(ratingsCache[a.id]||[]).length; });
+    else if (sortMode==='new') list.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+    else list.sort(function(a,b){ return recommendedScore(b)-recommendedScore(a); });
+    return list;
+  }
+  function displayPositions(list){
+    var geo = list.filter(function(r){ return r.lat!=null && r.lon!=null; });
+    var proj = projectPoints(geo.map(function(r){ return {lat:r.lat, lon:r.lon}; }));
+    var map = {};
+    geo.forEach(function(r,i){ map[r.id]=proj[i]; });
+    var out = {};
+    list.forEach(function(r){ out[r.id] = map[r.id] || {x:r.x, y:r.y}; });
+    return out;
+  }
+  function renderList(){
+    var list = filteredSorted();
+    if (!list.length){ sidebar.innerHTML = '<div class="list-empty">No places match yet.<br>Try a different search or add one!</div>'; return; }
+    var html = '';
+    list.forEach(function(r,i){
+      var ratings = ratingsCache[r.id]||[]; var avg = avgRating(ratings);
+      html += '<div class="r-card'+(r.id===selectedId?' selected':'')+'" style="animation-delay:'+(i*35)+'ms" data-id="'+r.id+'">'+
+        '<div class="r-emoji">'+emojiFor(r.cuisine)+(r.featured?'<span class="star-flag">⭐</span>':'')+'</div>'+
+        '<div class="r-card-body">'+
+          '<div class="r-card-top"><span class="r-name">'+escapeHtml(r.name)+'</span><span class="r-price">'+'$'.repeat(r.price)+'</span></div>'+
+          '<div class="r-sub">'+escapeHtml(r.cuisine)+' · '+escapeHtml(r.address || r.zone || '')+'</div>'+
+          '<div class="r-stars-row"><span class="stars-mini">'+starString(avg)+'</span><span class="rating-count">'+(ratings.length ? avg.toFixed(1)+' ('+ratings.length+')' : 'no ratings yet')+'</span></div>'+
+        '</div></div>';
+    });
+    sidebar.innerHTML = html;
+    sidebar.querySelectorAll('.r-card').forEach(function(card){ card.addEventListener('click', function(){ openDetail(card.getAttribute('data-id')); }); });
+  }
+  function renderPins(){
+    var list = filteredSorted();
+    mapEmpty.classList.toggle('hidden', restaurants.length!==0);
+    var pos = displayPositions(list);
+    var html = '';
+    list.forEach(function(r,i){
+      var ratings = ratingsCache[r.id]||[]; var avg = avgRating(ratings);
+      var isFave = avg!==null && avg>=4.5;
+      var p = pos[r.id];
+      html += '<div class="pin'+(isFave?' fave':'')+(r.id===selectedId?' selected':'')+'" style="left:'+p.x+'%; top:'+p.y+'%; animation-delay:'+(i*60)+'ms" data-id="'+r.id+'">'+
+        '<div class="pin-body"><span>'+emojiFor(r.cuisine)+'</span></div><div class="pin-tip">'+escapeHtml(r.name)+'</div></div>';
+    });
+    pinsLayer.innerHTML = html;
+    pinsLayer.querySelectorAll('.pin').forEach(function(pin){ pin.addEventListener('click', function(){ openDetail(pin.getAttribute('data-id')); }); });
+  }
+  function renderPicksStrip(){
+    var featured = restaurants.filter(function(r){ return r.featured; });
+    document.getElementById('picksStripTitle').style.display = featured.length ? 'flex' : 'none';
+    document.getElementById('picksStrip').innerHTML = featured.map(function(r){
+      var avg = avgRating(ratingsCache[r.id]);
+      return '<div class="pick-card" data-id="'+r.id+'"><span class="pick-badge">Editor\'s pick</span><h4>'+escapeHtml(r.name)+'</h4><span>'+escapeHtml(r.cuisine)+' · '+starString(avg,5)+'</span></div>';
+    }).join('');
+    document.querySelectorAll('.pick-card').forEach(function(c){ c.addEventListener('click', function(){ openDetail(c.getAttribute('data-id')); }); });
+  }
+  function renderDishStrip(){
+    var trend = trendingDishes(8);
+    document.getElementById('dishStrip').innerHTML = trend.length ? ('<span class="strip-title" style="margin:0 8px 0 0;">🔥 Trending</span>' + trend.map(function(t){
+      return '<button class="dish-trend-chip" data-dish="'+escapeHtml(t.label)+'">'+escapeHtml(t.label)+' <b>×'+t.count+'</b></button>';
+    }).join('')) : '';
+    document.querySelectorAll('.dish-trend-chip').forEach(function(c){ c.addEventListener('click', function(){
+      searchTerm = c.getAttribute('data-dish'); document.getElementById('searchInput').value = searchTerm; renderAll();
+    }); });
+  }
+  function renderStats(){
+    document.getElementById('statPlaces').textContent = restaurants.length;
+    var totalRatings = 0; restaurants.forEach(function(r){ totalRatings += (ratingsCache[r.id]||[]).length; });
+    document.getElementById('statRatings').textContent = totalRatings;
+    document.getElementById('statCuisines').textContent = currentCuisines().length;
+  }
+  function renderAll(){ renderList(); renderPins(); renderPicksStrip(); renderDishStrip(); renderStats(); }
+
+  document.getElementById('sortSelect').addEventListener('change', function(e){ sortMode = e.target.value; renderAll(); });
+  document.getElementById('searchInput').addEventListener('input', function(e){ searchTerm = e.target.value; renderAll(); });
+
+  // ================= Detail drawer =================
+  var drawer = document.getElementById('drawer');
+  var scrim = document.getElementById('scrim');
+  var drawerContent = document.getElementById('drawerContent');
+  function starInputHtml(){
+    var html = '<div class="star-input" data-role="stars">';
+    for (var i=1;i<=5;i++) html += '<button type="button" class="star-btn" data-val="'+i+'">★</button>';
+    return html + '</div>';
+  }
+  async function openDetail(id){
+    selectedId = id; renderAll();
+    var r = restaurants.find(function(x){ return x.id===id; });
+    if (!r) return;
+    drawerContent.innerHTML = '<div class="loading-screen"><div class="spin"></div>Loading…</div>';
+    openDrawer();
+    var ratings = ratingsCache[id] || (ratingsCache[id] = await loadRatingsFor(id));
+    var avg = avgRating(ratings);
+    var dishHtml = (r.dishes||[]).map(function(d){ return '<span class="dish-pill">'+escapeHtml(d)+'</span>'; }).join('');
+    var ratingsHtml = ratings.length ? ratings.map(function(rt){
+      var canDel = currentUser && (currentUser.isAdmin || rt.username===currentUser.username);
+      return '<div class="rating-item"><div class="rating-item-top"><span class="rating-name">'+escapeHtml(rt.displayName||rt.username||'Anonymous')+'</span>'+
+        '<span style="display:flex; align-items:center; gap:8px;"><span class="rating-stars">'+'★'.repeat(rt.stars)+'☆'.repeat(5-rt.stars)+'</span>'+
+        (canDel ? '<button class="mini-del" data-rid="'+rt.id+'">remove</button>' : '')+'</span></div>'+
+        (rt.comment ? '<div class="rating-comment">'+escapeHtml(rt.comment)+'</div>' : '')+'</div>';
+    }).join('') : '<div class="no-ratings">No ratings yet — be the first to weigh in.</div>';
+
+    var similar = similarTo(r, 3);
+    var similarHtml = similar.length ? similar.map(function(s){
+      return '<div class="similar-item" data-id="'+s.r.id+'"><div class="r-emoji">'+emojiFor(s.r.cuisine)+'</div>'+
+        '<div><span class="si-name">'+escapeHtml(s.r.name)+'</span><span class="si-sub">'+escapeHtml(s.r.cuisine)+' · '+'$'.repeat(s.r.price)+'</span></div></div>';
+    }).join('') : '';
+
+    var rateFormHtml = currentUser ?
+      '<form class="rate-form" id="rateForm">'+starInputHtml()+
+        '<textarea class="field" id="rateComment" placeholder="What did you think? (optional)"></textarea>'+
+        '<button type="submit" class="submit-btn" id="rateSubmitBtn" disabled>Post rating as '+escapeHtml(currentUser.username)+'</button></form>'
+      : '<div class="rate-form"><div class="login-gate">Sign in to rate this place. <button class="link-btn" id="gateSignin">Sign in</button></div></div>';
+
+    var canDeleteRestaurant = currentUser && (currentUser.isAdmin || r.ownerUsername===currentUser.username);
+
+    drawerContent.innerHTML =
+      '<div class="d-emoji">'+emojiFor(r.cuisine)+'</div>'+
+      '<h2 class="d-title">'+escapeHtml(r.name)+(r.featured?' <span title="Editor\'s pick">⭐</span>':'')+'</h2>'+
+      '<div class="d-meta"><span class="tag">'+escapeHtml(r.cuisine)+'</span><span>'+'$'.repeat(r.price)+'</span></div>'+
+      (r.address ? '<div class="d-address">📍 '+escapeHtml(r.address)+'</div>' : '<div class="d-address">📍 '+escapeHtml(r.zone||'Somewhere on the map')+'</div>')+
+      '<div class="avg-row"><span class="avg-num">'+(avg!==null?avg.toFixed(1):'—')+'</span><span class="avg-stars">'+starString(avg,5)+'</span><span style="color:var(--ink-soft); font-size:13px;">('+ratings.length+' rating'+(ratings.length===1?'':'s')+')</span></div>'+
+      '<p class="d-desc">'+escapeHtml(r.description)+'</p>'+
+      (dishHtml ? '<div class="d-section-title">Favourite dishes</div><div class="dish-list">'+dishHtml+'</div>' : '')+
+      '<div class="d-section-title">✨ Ask Ben\'s Places AI</div>'+
+      '<div class="ai-box"><h4>What should I order?</h4><div class="ai-input-row"><input class="field" id="aiMood" placeholder="e.g. something light, or I\'m starving" /><button class="ai-btn" id="aiAskBtn">Ask</button></div><div class="ai-result" id="aiResult"></div></div>'+
+      (similarHtml ? '<div class="d-section-title">You might also like</div><div class="similar-grid">'+similarHtml+'</div>' : '')+
+      '<div class="d-section-title">What people are saying</div><div id="ratingsList">'+ratingsHtml+'</div>'+
+      rateFormHtml +
+      (canDeleteRestaurant ? '<div class="delete-row"><button type="button" class="delete-btn" id="deleteBtn">🗑 Remove this place from the map</button></div>' : '');
+
+    document.querySelectorAll('.similar-item').forEach(function(el){ el.addEventListener('click', function(){ openDetail(el.getAttribute('data-id')); }); });
+    document.querySelectorAll('.mini-del').forEach(function(btn){ btn.addEventListener('click', async function(){
+      await deleteRatingKey(id, btn.getAttribute('data-rid'));
+      ratingsCache[id] = ratingsCache[id].filter(function(x){ return x.id!==btn.getAttribute('data-rid'); });
+      showToast('Rating removed.'); openDetail(id); renderAll();
+    }); });
+
+    var gateSignin = document.getElementById('gateSignin');
+    if (gateSignin) gateSignin.addEventListener('click', function(){ closeDrawer(); switchView('auth', {authTab:'login'}); });
+
+    document.getElementById('aiAskBtn').addEventListener('click', async function(){
+      var btn = this; btn.disabled = true; btn.textContent = '…';
+      var resEl = document.getElementById('aiResult'); resEl.classList.add('show'); resEl.textContent = 'Thinking about it…';
+      var mood = document.getElementById('aiMood').value.trim();
+      try{
+        var prompt = "You're a friendly, specific local food guide. Restaurant: "+r.name+" ("+r.cuisine+", price level "+'$'.repeat(r.price)+"). Description from the person who added it: "+r.description+". Favourite dishes listed: "+((r.dishes||[]).join(', ')||'none listed')+". The visitor says: \""+(mood||'Not sure what I want, surprise me.')+"\" In 2-3 short, warm sentences, tell them what to order and why. No generic filler.";
+        var text = '';
+        if (window.claude && typeof window.claude.complete === 'function') {
+          text = String(await window.claude.complete(prompt) || '').trim();
+        } else {
+          var ds = (r.dishes||[]);
+          var pick = ds.length ? ds[Math.floor(Math.random()*ds.length)] : null;
+          text = pick ? ("Go for the " + pick + ". It's one of the dishes " + (r.ownerUsername||'Ben') + " rates most here" + (mood ? ", and it should suit what you're after." : ".") + " (The full AI helper runs in the Claude version of this app.)")
+                      : "No favourite dishes listed yet. Ask the staff what they'd order. (The full AI helper runs in the Claude version of this app.)";
+        }
+        resEl.textContent = text || "Couldn't get a suggestion right now — try again in a moment.";
+      }catch(err){ resEl.textContent = "Couldn't reach the AI helper right now — try again in a moment."; }
+      btn.disabled = false; btn.textContent = 'Ask';
+    });
+
+    if (currentUser){
+      var chosen = 0;
+      var starBtns = drawerContent.querySelectorAll('.star-btn');
+      var rateSubmitBtn = document.getElementById('rateSubmitBtn');
+      starBtns.forEach(function(btn){ btn.addEventListener('click', function(){
+        chosen = parseInt(btn.getAttribute('data-val'),10);
+        starBtns.forEach(function(b){ b.classList.toggle('on', parseInt(b.getAttribute('data-val'),10)<=chosen); });
+        rateSubmitBtn.disabled = false;
+      }); });
+      document.getElementById('rateForm').addEventListener('submit', async function(e){
+        e.preventDefault(); if (!chosen) return;
+        rateSubmitBtn.disabled = true; rateSubmitBtn.textContent = 'Posting…';
+        var obj = { id:uid('rt'), restaurantId:id, username:currentUser.username, displayName:currentUser.username, stars:chosen, comment:document.getElementById('rateComment').value.trim(), createdAt:Date.now() };
+        try{
+          await saveRating(id, obj);
+          ratingsCache[id] = (ratingsCache[id]||[]).concat([obj]);
+          showToast('Thanks — your rating is on the map!');
+          openDetail(id); renderAll();
+        }catch(err){ showToast("Couldn't save that — try again."); rateSubmitBtn.disabled = false; rateSubmitBtn.textContent = 'Post rating'; }
+      });
+    }
+
+    var deleteBtn = document.getElementById('deleteBtn');
+    if (deleteBtn) deleteBtn.addEventListener('click', async function(){
+      if (!confirm('Remove "'+r.name+'" from the map for everyone? This can\'t be undone.')) return;
+      try{
+        await deleteRestaurantKey(id);
+        restaurants = restaurants.filter(function(x){ return x.id!==id; });
+        delete ratingsCache[id]; closeDrawer(); selectedId=null; renderAll();
+        showToast('Removed from the map.');
+      }catch(err){ showToast("Couldn't remove that — try again."); }
+    });
+  }
+  function openDrawer(){ drawer.classList.add('open'); scrim.classList.add('show'); drawer.setAttribute('aria-hidden','false'); }
+  function closeDrawer(){ drawer.classList.remove('open'); scrim.classList.remove('show'); drawer.setAttribute('aria-hidden','true'); selectedId=null; renderAll(); }
+  document.getElementById('drawerCloseBtn').addEventListener('click', closeDrawer);
+
+  // ================= Add place modal =================
+  var addModal = document.getElementById('addModal');
+  var miniMap = document.getElementById('miniMap');
+  var addBtn = document.getElementById('addBtn');
+  var priceToggle = document.getElementById('priceToggle');
+  var chosenPrice = 2;
+  var addForm = document.getElementById('addForm');
+  var submitAddBtn = document.getElementById('submitAddBtn');
+  var dropHint = document.getElementById('dropHint');
+  miniMap.innerHTML = mapSvg();
+
+  priceToggle.querySelectorAll('button').forEach(function(btn){ btn.addEventListener('click', function(){
+    chosenPrice = parseInt(btn.getAttribute('data-price'),10);
+    priceToggle.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b===btn); });
+  }); });
+
+  function checkFormReady(){
+    var name = document.getElementById('f-name').value.trim();
+    var cuisine = document.getElementById('f-cuisine').value.trim();
+    var desc = document.getElementById('f-desc').value.trim();
+    submitAddBtn.disabled = !(name && cuisine && desc && pendingPin);
+  }
+  ['f-name','f-cuisine','f-desc'].forEach(function(id){ document.getElementById(id).addEventListener('input', checkFormReady); });
+
+  function placeMiniPin(x,y){
+    var existing = miniMap.querySelector('.mini-pin'); if (existing) existing.remove();
+    var pin = document.createElement('div'); pin.className='mini-pin'; pin.style.left=x+'%'; pin.style.top=y+'%';
+    pin.innerHTML = '<div class="mini-pin-body"></div>'; miniMap.appendChild(pin);
+    dropHint.innerHTML = 'Dropped in <span class="zone-caught">'+nearestZone(x,y)+'</span>.';
+  }
+  miniMap.addEventListener('click', function(e){
+    var rect = miniMap.getBoundingClientRect();
+    var x = Math.max(2, Math.min(98, ((e.clientX-rect.left)/rect.width)*100));
+    var y = Math.max(4, Math.min(96, ((e.clientY-rect.top)/rect.height)*100));
+    pendingPin = { x:x, y:y, lat:null, lon:null };
+    placeMiniPin(x,y);
+    checkFormReady();
+  });
+
+  var addrResults = document.getElementById('addrResults');
+  var addrStatus = document.getElementById('addrStatus');
+  var searchAddress = debounce(async function(q){
+    if (q.trim().length < 3){ addrResults.classList.add('hidden'); addrStatus.textContent=''; return; }
+    addrStatus.textContent = 'Searching…';
+    try{
+      var url = 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&q='+encodeURIComponent(q);
+      var res = await fetch(url, { headers:{ 'Accept':'application/json' } });
+      if (!res.ok) throw new Error('bad response');
+      var data = await res.json();
+      if (!data.length){ addrResults.classList.add('hidden'); addrStatus.textContent='No matches — drop the pin manually below instead.'; return; }
+      addrResults.innerHTML = data.map(function(item, i){
+        return '<div class="addr-result-item" data-i="'+i+'"><b>'+escapeHtml((item.display_name||'').split(',')[0])+'</b><span>'+escapeHtml(item.display_name||'')+'</span></div>';
+      }).join('');
+      addrResults.classList.remove('hidden'); addrStatus.textContent='';
+      addrResults.querySelectorAll('.addr-result-item').forEach(function(el){
+        el.addEventListener('click', function(){
+          var item = data[parseInt(el.getAttribute('data-i'),10)];
+          var lat = parseFloat(item.lat), lon = parseFloat(item.lon);
+          var geoRestaurants = restaurants.filter(function(r){ return r.lat!=null && r.lon!=null; }).map(function(r){ return {lat:r.lat, lon:r.lon}; });
+          geoRestaurants.push({lat:lat, lon:lon});
+          var proj = projectPoints(geoRestaurants);
+          var p = proj[proj.length-1];
+          pendingPin = { x:p.x, y:p.y, lat:lat, lon:lon, address:item.display_name };
+          placeMiniPin(p.x, p.y);
+          document.getElementById('f-address').value = item.display_name || '';
+          if (!document.getElementById('f-name').value.trim()) document.getElementById('f-name').value = (item.display_name||'').split(',')[0];
+          addrResults.classList.add('hidden'); document.getElementById('addrSearch').value = item.display_name;
+          checkFormReady();
+        });
+      });
+    }catch(err){ addrResults.classList.add('hidden'); addrStatus.textContent = "Couldn't reach the address lookup — drop the pin manually below instead."; }
+  }, 420);
+  document.getElementById('addrSearch').addEventListener('input', function(e){ searchAddress(e.target.value); });
+
+  function renderDishChips(){
+    document.getElementById('dishChips').innerHTML = dishDraft.map(function(d,i){ return '<span class="dish-chip">'+escapeHtml(d)+'<button type="button" data-i="'+i+'">✕</button></span>'; }).join('');
+    document.getElementById('dishChips').querySelectorAll('button').forEach(function(b){ b.addEventListener('click', function(){ dishDraft.splice(parseInt(b.getAttribute('data-i'),10),1); renderDishChips(); }); });
+  }
+  function addDishFromInput(){ var inp=document.getElementById('f-dish'); var v=inp.value.trim(); if (v){ dishDraft.push(v); inp.value=''; renderDishChips(); } }
+  document.getElementById('dishAddBtn').addEventListener('click', addDishFromInput);
+  document.getElementById('f-dish').addEventListener('keydown', function(e){ if (e.key==='Enter'||e.key===','){ e.preventDefault(); addDishFromInput(); } });
+
+  function openAddModal(){
+    if (!requireAuth('add a place')) return;
+    addForm.reset(); dishDraft=[]; renderDishChips(); pendingPin=null;
+    var existing = miniMap.querySelector('.mini-pin'); if (existing) existing.remove();
+    document.getElementById('addrSearch').value=''; addrResults.classList.add('hidden'); addrStatus.textContent='';
+    dropHint.textContent = 'Pick a search result above, or tap the map to place the pin yourself.';
+    chosenPrice = 2; priceToggle.querySelectorAll('button').forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-price')==='2'); });
+    submitAddBtn.disabled = true;
+    document.getElementById('cuisineOptions').innerHTML = currentCuisines().map(function(c){ return '<option value="'+escapeHtml(c)+'">'; }).join('');
+    addModal.classList.add('open'); scrim.classList.add('show'); addModal.setAttribute('aria-hidden','false');
+  }
+  function closeAddModal(){ addModal.classList.remove('open'); scrim.classList.remove('show'); addModal.setAttribute('aria-hidden','true'); }
+  addBtn.addEventListener('click', openAddModal);
+  document.getElementById('modalCloseBtn').addEventListener('click', closeAddModal);
+  scrim.addEventListener('click', function(){ closeDrawer(); closeAddModal(); closeReviewsModal(); });
+  window.addEventListener('keydown', function(e){ if (e.key==='Escape'){ closeDrawer(); closeAddModal(); closeReviewsModal(); } });
+
+  addForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    if (!pendingPin || !currentUser) return;
+    submitAddBtn.disabled = true; submitAddBtn.textContent = 'Dropping pin…';
+    var obj = {
+      id: uid('r'), name: document.getElementById('f-name').value.trim(),
+      address: document.getElementById('f-address').value.trim() || null,
+      cuisine: document.getElementById('f-cuisine').value.trim(), price: chosenPrice,
+      x: pendingPin.x, y: pendingPin.y, lat: pendingPin.lat, lon: pendingPin.lon,
+      zone: nearestZone(pendingPin.x, pendingPin.y),
+      description: document.getElementById('f-desc').value.trim(), dishes: dishDraft.slice(),
+      ownerUsername: currentUser.username, featured:false, createdAt: Date.now()
+    };
+    try{
+      await saveRestaurant(obj);
+      restaurants.unshift(obj); ratingsCache[obj.id] = [];
+      renderChips(); renderAll(); closeAddModal(); showToast('Added to the map!');
+    }catch(err){ showToast("Couldn't save — try again."); }
+    submitAddBtn.disabled = false; submitAddBtn.textContent = 'Drop the pin';
+  });
+
+  // ================= My reviews =================
+  var reviewsModal = document.getElementById('reviewsModal');
+  function openMyReviews(){
+    var mine = [];
+    restaurants.forEach(function(r){ (ratingsCache[r.id]||[]).forEach(function(rt){ if (rt.username===currentUser.username) mine.push({r:r, rt:rt}); }); });
+    document.getElementById('myReviewsList').innerHTML = mine.length ? mine.map(function(m){
+      return '<div class="rating-item" data-id="'+m.r.id+'" style="cursor:pointer;"><div class="rating-item-top"><span class="rating-name">'+escapeHtml(m.r.name)+'</span><span class="rating-stars">'+'★'.repeat(m.rt.stars)+'☆'.repeat(5-m.rt.stars)+'</span></div>'+(m.rt.comment?'<div class="rating-comment">'+escapeHtml(m.rt.comment)+'</div>':'')+'</div>';
+    }).join('') : '<div class="no-ratings">No reviews yet — go rate somewhere you\'ve tried!</div>';
+    document.querySelectorAll('#myReviewsList .rating-item').forEach(function(el){ el.addEventListener('click', function(){ closeReviewsModal(); openDetail(el.getAttribute('data-id')); }); });
+    reviewsModal.classList.add('open'); scrim.classList.add('show'); reviewsModal.setAttribute('aria-hidden','false');
+  }
+  function closeReviewsModal(){ reviewsModal.classList.remove('open'); scrim.classList.remove('show'); reviewsModal.setAttribute('aria-hidden','true'); }
+  document.getElementById('reviewsCloseBtn').addEventListener('click', closeReviewsModal);
+
+  // ================= Admin =================
+  function renderAdmin(){
+    var totalRatings = 0; restaurants.forEach(function(r){ totalRatings += (ratingsCache[r.id]||[]).length; });
+    document.getElementById('adminStats').innerHTML =
+      '<div class="stat-card"><b>'+restaurants.length+'</b><span>places</span></div>'+
+      '<div class="stat-card"><b>'+totalRatings+'</b><span>ratings</span></div>'+
+      '<div class="stat-card"><b>'+users.length+'</b><span>users</span></div>'+
+      '<div class="stat-card"><b>'+globalAverage().toFixed(2)+'</b><span>site-wide avg rating</span></div>';
+
+    document.getElementById('adminPlaces').innerHTML = restaurants.length ? restaurants.map(function(r){
+      var avg = avgRating(ratingsCache[r.id]);
+      return '<div class="admin-row"><div class="ar-main"><b>'+escapeHtml(r.name)+'</b><span>'+escapeHtml(r.cuisine)+' · added by '+escapeHtml(r.ownerUsername||'unknown')+' · '+(avg!==null?avg.toFixed(1)+'★':'no ratings')+'</span></div>'+
+        '<div class="ar-actions"><button class="mini-btn'+(r.featured?' on':'')+'" data-feat="'+r.id+'">'+(r.featured?'★ Featured':'☆ Feature')+'</button>'+
+        '<button class="mini-btn danger" data-delp="'+r.id+'">Delete</button></div></div>';
+    }).join('') : '<div class="empty-note">No places yet.</div>';
+
+    document.getElementById('adminRatings').innerHTML = (function(){
+      var rows = [];
+      restaurants.forEach(function(r){ (ratingsCache[r.id]||[]).forEach(function(rt){ rows.push({r:r, rt:rt}); }); });
+      rows.sort(function(a,b){ return (b.rt.createdAt||0)-(a.rt.createdAt||0); });
+      if (!rows.length) return '<div class="empty-note">No ratings yet.</div>';
+      return rows.map(function(row){
+        return '<div class="admin-row"><div class="ar-main"><b>'+escapeHtml(row.rt.displayName||row.rt.username||'Anonymous')+' → '+escapeHtml(row.r.name)+'</b><span>'+'★'.repeat(row.rt.stars)+'☆'.repeat(5-row.rt.stars)+(row.rt.comment?' · '+escapeHtml(row.rt.comment):'')+'</span></div>'+
+          '<div class="ar-actions"><button class="mini-btn danger" data-delr="'+row.r.id+'|'+row.rt.id+'">Remove</button></div></div>';
+      }).join('');
+    })();
+
+    var visibleUsers = users.filter(function(u){ return !u.isAdmin; });
+    document.getElementById('adminUsers').innerHTML = visibleUsers.length ? visibleUsers.map(function(u){
+      return '<div class="admin-row"><div class="ar-main"><b>'+escapeHtml(u.username)+'</b><span>'+escapeHtml(u.email||'')+'</span></div>'+
+        '<div class="ar-actions"><button class="mini-btn danger" data-delu="'+u.username+'">Remove</button></div></div>';
+    }).join('') : '<div class="empty-note">No users yet.</div>';
+
+    document.querySelectorAll('[data-feat]').forEach(function(b){ b.addEventListener('click', async function(){
+      var id = b.getAttribute('data-feat'); var r = restaurants.find(function(x){ return x.id===id; });
+      r.featured = !r.featured; await saveRestaurant(r); renderAdmin(); renderAll(); showToast(r.featured?'Featured on the map.':'Unfeatured.');
+    }); });
+    document.querySelectorAll('[data-delp]').forEach(function(b){ b.addEventListener('click', async function(){
+      var id = b.getAttribute('data-delp'); if (!confirm('Delete this place for everyone?')) return;
+      await deleteRestaurantKey(id); restaurants = restaurants.filter(function(x){ return x.id!==id; }); delete ratingsCache[id];
+      renderAdmin(); renderAll(); showToast('Place deleted.');
+    }); });
+    document.querySelectorAll('[data-delr]').forEach(function(b){ b.addEventListener('click', async function(){
+      var parts = b.getAttribute('data-delr').split('|'); if (!confirm('Remove this rating?')) return;
+      await deleteRatingKey(parts[0], parts[1]); ratingsCache[parts[0]] = (ratingsCache[parts[0]]||[]).filter(function(x){ return x.id!==parts[1]; });
+      renderAdmin(); renderAll(); showToast('Rating removed.');
+    }); });
+    document.querySelectorAll('[data-delu]').forEach(function(b){ b.addEventListener('click', async function(){
+      var uname = b.getAttribute('data-delu'); if (!confirm('Remove user "'+uname+'"? They can sign up again later.')) return;
+      try{ await window.storage.delete('user:'+uname.toLowerCase(), true); users = users.filter(function(u){ return u.username!==uname; }); renderAdmin(); showToast('User removed.'); }
+      catch(err){ showToast("Couldn't remove that user."); }
+    }); });
+  }
+
+  // ================= Seed demo data =================
+  var SEED = [
+    { name:'Nonna Rosa', cuisine:'Italian', price:2, x:24, y:30, description:'Tiny family-run spot with red-check tablecloths. Go on a weeknight and you might get the corner table by the window.', dishes:['Cacio e pepe','Tiramisu'] },
+    { name:'Kobachi Ramen', cuisine:'Ramen', price:1, x:69, y:24, description:'Rich tonkotsu broth that simmers for two days. Line moves fast even when it looks long.', dishes:['Tonkotsu ramen','Gyoza'] },
+    { name:'Market Greens', cuisine:'Vegetarian', price:2, x:48, y:52, description:'Rotating menu built around whatever looked best at the farmers market that morning.', dishes:['Roast squash salad','Sourdough toast'] },
+    { name:'The Salt Dock', cuisine:'Seafood', price:3, x:77, y:70, description:'Right on the water. Get there before sunset and grab an outdoor table if you can.', dishes:['Grilled octopus','Oysters'] }
+  ];
+  var SEED_RATINGS = [
+    [ {name:'Jules', stars:5, comment:"Best carbonara I've had outside Rome, honestly."}, {name:'Priya', stars:4, comment:'Cosy and unpretentious. Portions are generous.'} ],
+    [ {name:'Tom', stars:5, comment:'That broth. I think about it weekly.'} ],
+    [ {name:'Ana', stars:4, comment:"Menu changes often so worth checking what's on before you go."} ],
+    [ {name:'Marco', stars:5, comment:'Sunset table + oysters = perfect evening.'}, {name:'Lena', stars:4, comment:'A little pricey but the view earns it.'} ]
+  ];
+  async function seedIfEmpty(){
+    var existing = await window.storage.list('restaurant:', true).catch(function(){ return null; });
+    if (existing && existing.keys && existing.keys.length) return;
+    for (var i=0;i<SEED.length;i++){
+      var s = SEED[i];
+      var obj = { id: uid('r'), name:s.name, cuisine:s.cuisine, price:s.price, x:s.x, y:s.y, lat:null, lon:null, address:null,
+        zone: nearestZone(s.x, s.y), description:s.description, dishes:s.dishes, ownerUsername:'ben', featured: i===0, createdAt: Date.now() - (SEED.length-i)*1000 };
+      await saveRestaurant(obj);
+      var rl = SEED_RATINGS[i] || [];
+      for (var j=0;j<rl.length;j++){
+        var rt = rl[j];
+        await saveRating(obj.id, { id: uid('rt'), restaurantId: obj.id, username:null, displayName: rt.name, stars: rt.stars, comment: rt.comment, createdAt: Date.now() - (rl.length-j)*1000 });
+      }
+    }
+  }
+
+  async function seedAdminIfMissing(){
+    try{
+      var existing = await window.storage.get('user:admin', true).catch(function(){ return null; });
+      if (existing) return;
+      var hp = await hashPassword('admin');
+      var obj = { username:'admin', email:'admin@bensplaces.local', hash:hp.hash, salt:hp.salt, isAdmin:true, createdAt:Date.now() };
+      await saveUser(obj);
+    }catch(e){}
+  }
+
+  // ================= Init =================
+  async function init(){
+    renderNav();
+    await seedIfEmpty();
+    await seedAdminIfMissing();
+    restaurants = await loadRestaurants();
+    restaurants.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+    for (var i=0;i<restaurants.length;i++){ ratingsCache[restaurants[i].id] = await loadRatingsFor(restaurants[i].id); }
+    users = await loadUsers();
+    renderChips(); renderAll();
+    switchView('landing');
+  }
+  init();
+})();
+</script>
+</body>
+</html>
