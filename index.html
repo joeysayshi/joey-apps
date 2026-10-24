@@ -500,6 +500,78 @@ footer{background:var(--night);border-top:1px solid var(--night-2);overflow:hidd
 .flinks{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-block:20px 34px;color:var(--ash)}
 .flinks a{text-decoration:none;margin-left:14px}.flinks a:hover{color:var(--sun)}
 
+
+/* ---------- boot intro ---------- */
+#boot{position:fixed;inset:0;z-index:100;background:var(--night);color:var(--paper);display:grid;place-items:center;padding:24px;clip-path:inset(0 0 0 0);transition:clip-path .7s cubic-bezier(.7,0,.2,1)}
+#boot.out{clip-path:inset(0 0 100% 0)}
+.boot-in{width:min(520px,100%);display:grid;gap:14px}
+.boot-top{display:flex;justify-content:space-between;color:var(--ash)}
+.boot-num{font-family:var(--cond);font-weight:800;font-size:clamp(110px,22vw,220px);line-height:.8;color:var(--sun);font-variant-numeric:tabular-nums}
+.boot-bar{height:4px;background:var(--night-2)}.boot-bar i{display:block;height:100%;width:0;background:var(--sun)}
+.boot-log{display:grid;gap:4px;color:var(--ash);min-height:4.2em;font-size:12px}
+.boot-log span b{color:var(--lime);font-weight:700}
+.boot-skip{justify-self:start;background:none;border:0;color:#5D606B;font:700 11px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;padding:6px 0}
+/* ---------- command palette ---------- */
+.kbtn{display:inline-flex;align-items:center;gap:6px;background:var(--night-2);border:1px solid #33364A;color:var(--paper);font:700 12px/1 var(--mono);letter-spacing:.06em;padding:8px 10px;border-radius:8px;cursor:pointer;text-transform:uppercase}
+.kbtn:hover{border-color:var(--sun);color:var(--sun)}
+.kbtn kbd{font:inherit;background:#33364A;border-radius:4px;padding:3px 5px;font-size:10.5px}
+.mobile-tools{display:none;gap:8px;align-items:center}
+@media (max-width:1000px){.mobile-tools{display:flex}}
+#cmdk{position:fixed;inset:0;z-index:95;background:rgba(10,11,15,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);display:grid;place-items:start center;padding:calc(env(safe-area-inset-top,0px) + 12vh) max(16px, env(safe-area-inset-right,0px)) 16px max(16px, env(safe-area-inset-left,0px));opacity:0;visibility:hidden;transition:opacity .2s,visibility 0s .2s}
+#cmdk.open{opacity:1;visibility:visible;transition:opacity .2s}
+.cmd-box{width:min(620px,100%);background:#1B1C24;border:1px solid #33364A;border-radius:16px;box-shadow:0 30px 80px rgba(0,0,0,.5);overflow:hidden;transform:translateY(-10px) scale(.98);transition:transform .25s cubic-bezier(.2,1.2,.4,1)}
+#cmdk.open .cmd-box{transform:none}
+.cmd-in{display:flex;align-items:center;gap:10px;padding:14px 16px;border-bottom:1px solid #2A2C36}
+.cmd-in svg{width:18px;height:18px;fill:none;stroke:var(--ash);stroke-width:2;flex:none}
+.cmd-in input{flex:1;min-width:0;background:transparent;border:0;outline:none;color:#fff;font:500 18px/1.2 var(--body)}
+.cmd-in kbd{font:700 10.5px/1 var(--mono);color:var(--ash);border:1px solid #33364A;border-radius:4px;padding:4px 6px}
+.cmd-list{list-style:none;margin:0;padding:8px;max-height:min(52vh,420px);overflow-y:auto}
+.cmd-group{font:700 10.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:#5D606B;padding:10px 10px 6px}
+.cmd-item{display:flex;align-items:center;gap:12px;padding:10px;border-radius:10px;cursor:pointer;color:#E4E6EE}
+.cmd-item .ci{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:#2A2C36;font-family:var(--cond);font-weight:800;font-size:15px;flex:none;color:var(--ink)}
+.cmd-item small{margin-left:auto;color:#5D606B;font:500 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.06em}
+.cmd-item[aria-selected="true"]{background:#2A2C36;color:#fff}
+.cmd-item[aria-selected="true"] small{color:var(--sun)}
+.cmd-empty{padding:22px 12px;color:var(--ash);text-align:center}
+.cmd-foot{display:flex;gap:16px;padding:10px 16px;border-top:1px solid #2A2C36;color:#5D606B;font:500 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.06em}
+/* ---------- journey ---------- */
+.journey{position:relative;display:grid;gap:0;margin-top:20px;padding-left:64px}
+.journey::before{content:"";position:absolute;left:23px;top:0;bottom:0;width:2px;background:repeating-linear-gradient(to bottom,#3A3D48 0 8px,transparent 8px 16px)}
+.j-fill{position:absolute;left:23px;top:0;width:2px;height:0;background:var(--sun)}
+.j-plane{position:absolute;left:24px;top:0;width:34px;height:34px;translate:-50% -50%;rotate:180deg;display:grid;place-items:center;background:var(--night);border-radius:50%}
+.j-plane svg{width:24px;height:24px;fill:var(--sun)}
+.stop{position:relative;display:grid;grid-template-columns:150px minmax(0,1fr);gap:8px 28px;padding-block:22px;border-bottom:1px solid var(--night-2)}
+.stop:last-child{border-bottom:0}
+.stop::before{content:"";position:absolute;left:-46px;top:30px;width:12px;height:12px;border-radius:50%;background:var(--night);border:2px solid #4A4D58;transition:background .3s,border-color .3s}
+.stop.past::before{background:var(--sun);border-color:var(--sun)}
+.stop .when{color:var(--sun);padding-top:6px}
+.stop h3{font-size:clamp(30px,3vw,44px)}
+.stop p{color:var(--ash);max-width:40em;margin-top:6px}
+.stop.now h3{color:var(--sun)}
+@media (max-width:640px){.journey{padding-left:44px}.journey::before,.j-fill{left:13px}.j-plane{left:14px}.stop{grid-template-columns:minmax(0,1fr)}.stop::before{left:-36px}}
+/* ---------- toolbox marquee ---------- */
+.toolbox{background:var(--sun);color:var(--ink);padding-block:34px;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;border-block:2px solid var(--ink)}
+.toolbox > .wrap{width:100%}
+.tb-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.tb-head b{font-family:var(--cond);font-weight:800;font-size:clamp(34px,4vw,54px);text-transform:uppercase;line-height:1}
+.tb-row{display:flex;width:max-content;gap:10px;animation:tb 40s linear infinite}
+.tb-row.rev{animation-direction:reverse;animation-duration:46s}
+.toolbox:hover .tb-row{animation-play-state:paused}
+@keyframes tb{to{transform:translateX(-33.3333%)}}
+.tool{display:inline-flex;align-items:center;gap:8px;background:var(--paper);border:2px solid var(--ink);border-radius:99px;padding:9px 16px 9px 10px;font-weight:600;font-size:16px;white-space:nowrap;box-shadow:3px 3px 0 var(--ink)}
+.tool i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:800 11px/1 var(--mono);font-style:normal;color:#fff;background:var(--c,var(--ink))}
+/* ---------- spotlight + magnetic ---------- */
+.win{position:relative}
+.win::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(240px circle at var(--mx,50%) var(--my,50%),rgba(255,255,255,.45),transparent 65%);mix-blend-mode:soft-light;opacity:0;transition:opacity .3s}
+.item:hover .win::after{opacity:1}
+.mag{transition:transform .25s cubic-bezier(.2,.8,.2,1)}
+/* ---------- easter egg ---------- */
+.drop{position:fixed;top:-40px;z-index:99;pointer-events:none;width:22px;height:30px;border-radius:50% 50% 50% 50%/60% 60% 40% 40%;background:#7CB342;box-shadow:inset -4px -4px 0 rgba(0,0,0,.15);animation:fall linear forwards}
+@keyframes fall{to{transform:translateY(115vh) rotate(var(--rot,180deg))}}
+#eggToast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 28px);translate:-50% 0;z-index:99;background:#7CB342;color:#fff;font:700 13px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;padding:14px 18px;border-radius:99px;box-shadow:0 10px 30px rgba(0,0,0,.35);opacity:0;transform:translateY(20px);transition:opacity .3s,transform .3s;pointer-events:none}
+#eggToast.show{opacity:1;transform:none}
+@media (prefers-reduced-motion:reduce){.tb-row{animation:none;flex-wrap:wrap;width:auto}#boot{display:none}}
+
 /* ---------- wipe + cursor ---------- */
 #wipe{position:fixed;inset:0;z-index:80;background:var(--sun);display:grid;place-items:center;clip-path:inset(100% 0 0 0);pointer-events:none}
 #wipe span{font-family:var(--cond);font-weight:800;font-size:clamp(64px,11vw,150px);color:var(--ink);text-transform:uppercase;text-align:center;padding-inline:16px}
@@ -521,6 +593,23 @@ footer{background:var(--night);border-top:1px solid var(--night-2);overflow:hidd
 }
 </style>
 
+<div id="boot" aria-hidden="true" hidden>
+  <div class="boot-in">
+    <div class="boot-top mono"><span>Joey OS</span><span>v2026.10</span></div>
+    <div class="boot-num" id="bootNum">000</div>
+    <div class="boot-bar"><i id="bootBar"></i></div>
+    <div class="boot-log mono" id="bootLog"></div>
+    <button class="boot-skip" id="bootSkip" type="button">Skip intro →</button>
+  </div>
+</div>
+<div id="cmdk" role="dialog" aria-modal="true" aria-label="Command menu">
+  <div class="cmd-box">
+    <div class="cmd-in"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><label for="cmdIn" class="sr">Search commands</label><input id="cmdIn" placeholder="Jump to a section, open a project, copy my email…" autocomplete="off" spellcheck="false"><kbd>Esc</kbd></div>
+    <ul class="cmd-list" id="cmdList" role="listbox" aria-label="Commands"></ul>
+    <div class="cmd-foot"><span>↑↓ to move</span><span>↵ to open</span><span>⌘K to toggle</span></div>
+  </div>
+</div>
+<div id="eggToast" role="status"></div>
 <div id="prog" aria-hidden="true"></div>
 <div id="wipe" aria-hidden="true"><span id="wipeTxt">Joey</span></div>
 <div id="cur" aria-hidden="true"><b></b></div>
@@ -535,9 +624,10 @@ footer{background:var(--night);border-top:1px solid var(--night-2);overflow:hidd
       <a href="#apps" data-scr>Try my apps</a>
       <a href="#hire" data-scr>Hire me</a>
       <a class="gh" href="https://github.com/joeysayshi" target="_blank" rel="noopener" aria-label="Joey on GitHub" data-cur="GITHUB"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5a11.5 11.5 0 0 0-3.64 22.41c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.33-1.29-1.69-1.29-1.69-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.19 1.77 1.19 1.03 1.77 2.71 1.26 3.37.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.17 1.18a11 11 0 0 1 5.77 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.8 1.19 1.83 1.19 3.09 0 4.42-2.69 5.39-5.26 5.68.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 12 .5z"/></svg></a>
+      <button class="kbtn" type="button" data-cmdk aria-label="Open command menu"><kbd>⌘K</kbd></button>
       <a class="cta" href="#contact" data-scr data-cur="HELLO">Start a project</a>
     </nav>
-    <button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mnav">Menu</button>
+    <div class="mobile-tools"><button class="kbtn" type="button" data-cmdk aria-label="Open command menu">Search</button><button class="menu-btn" id="menuBtn" aria-expanded="false" aria-controls="mnav">Menu</button></div>
   </div>
 </header>
 <div class="mnav" id="mnav" aria-hidden="true">
@@ -742,6 +832,33 @@ footer{background:var(--night);border-top:1px solid var(--night-2);overflow:hidd
     </div>
   </div>
 </section>
+
+<section class="dark sec" id="journey" style="padding-top:0">
+  <div class="wrap">
+    <div class="sec-head">
+      <h2>How I got here</h2>
+      <p>From a noughts and crosses game to a Mac app that runs my day. Scroll to fly the route.</p>
+    </div>
+    <div class="journey" id="journeyEl">
+      <i class="j-fill" id="jFill"></i>
+      <span class="j-plane" id="jPlane" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 15.5v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0v5l-8 5v2l8-2.5V18l-2 1.5V21l3.5-1 3.5 1v-1.5L13 18v-5z"/></svg></span>
+      <div class="stop"><span class="mono when">Dec 2024</span><div><h3>Knots and Crosses</h3><p>My first project on GitHub. A noughts and crosses game, and the start of everything.</p></div></div>
+      <div class="stop"><span class="mono when">Jan 2026</span><div><h3>Joey Arcade</h3><p>A little website full of browser games I made.</p></div></div>
+      <div class="stop"><span class="mono when">Mar 2026</span><div><h3>GeoGuesser</h3><p>A guess-where-you-are map game.</p></div></div>
+      <div class="stop"><span class="mono when">Apr 2026</span><div><h3>Joey's Flights, take one</h3><p>My first go at a flight booking site. It wouldn't be the last.</p></div></div>
+      <div class="stop"><span class="mono when">Jul 2026</span><div><h3>Jarvis &amp; Hand Mouse</h3><p>A voice assistant, and a Mac you control by waving at the webcam.</p></div></div>
+      <div class="stop"><span class="mono when">Sep 2026</span><div><h3>Aerofare</h3><p>Flight booking you scroll through in 3D, with the plane flying as you go.</p></div></div>
+      <div class="stop"><span class="mono when">Oct 2026</span><div><h3>Real sites, real users</h3><p>Rebuilt Profire's website, launched Joey's Flights with real bookings, and shipped One More Floor.</p></div></div>
+      <div class="stop now"><span class="mono when">Now</span><div><h3>Life Dashboard</h3><p>Everything I'd built, rolled into one Mac app I use every day. Next stop: your website.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<div class="toolbox" aria-label="Tools I build with">
+  <div class="wrap tb-head"><b>My toolbox</b><span class="mono">What I build with</span></div>
+  <div class="tb-row" id="tb1"></div>
+  <div class="tb-row rev" id="tb2"></div>
+</div>
 
 <section class="light sec" id="work">
   <div class="wrap">
@@ -1173,7 +1290,7 @@ document.addEventListener("click",e=>{
   e.preventDefault();menu(false);
   const go=()=>{const y=id==="#top"?0:t.getBoundingClientRect().top+scrollY-60;scrollTo(0,y)};
   if(RM){go();return}
-  const label={"#lifedash":"Life Dashboard","#work":"The work","#apps":"Boarding","#hire":"Let's build","#contact":"Say hi","#about":"Hi, I'm Joey","#top":"Joey"}[id]||"Joey";
+  const label={"#lifedash":"Life Dashboard","#work":"The work","#apps":"Boarding","#hire":"Let's build","#contact":"Say hi","#journey":"The route","#about":"Hi, I'm Joey","#top":"Joey"}[id]||"Joey";
   wipeTxt.textContent=label;
   wipe.className="in";
   setTimeout(()=>{go();wipe.className="out";setTimeout(()=>wipe.className="",600)},520);
@@ -1210,7 +1327,7 @@ $$(".sec-head h2, .contact h2, .feature h2").forEach(h=>{
   h.innerHTML=h.textContent.split(" ").map((w,i)=>`<span class="wd" style="transition-delay:${i*80}ms">${w}</span>`).join(" ");h.classList.add("words");
 });
 [".facts",".work-grid",".passes",".likes",".f-grid"].forEach(g=>$$(g).forEach(b=>[...b.children].forEach((c,i)=>{c.classList.add("rv");c.style.transitionDelay=(i%8)*70+"ms"})));
-$$(".sec-head p, .pk, .filters, .contact .lede, .mail, .aboutwin, #form, .feature .lede, .f-meta, .feature .ctas").forEach(e=>e.classList.add("rv"));
+$$(".stop, .sec-head p, .pk, .filters, .contact .lede, .mail, .aboutwin, #form, .feature .lede, .f-meta, .feature .ctas").forEach(e=>e.classList.add("rv"));
 const below=el=>el.getBoundingClientRect().top>innerHeight*.92;
 function show(el){el.classList.remove("pre");$$(".wd",el).forEach(w=>w.classList.remove("pre"))}
 if(!RM){$$(".rv, .words").forEach(el=>{if(below(el)){if(el.classList.contains("words"))$$(".wd",el).forEach(w=>w.classList.add("pre"));else el.classList.add("pre")}})}
@@ -1221,6 +1338,102 @@ note.innerHTML=lab+ntext.split(" ").map(w=>`<span class="nw">${w}</span>`).join(
 const nws=$$(".nw",note);
 if(RM){nws.forEach(w=>w.classList.add("lit"));dashLive()}
 if(!below($("#board")))flipped=true;
+
+/* ---------- boot intro (once per visit) ---------- */
+(function(){
+  const boot=$("#boot");let seen=false;
+  try{seen=sessionStorage.getItem("joeyBooted")==="1"}catch(e){}
+  if(RM||seen||document.visibilityState==="hidden")return;
+  try{sessionStorage.setItem("joeyBooted","1")}catch(e){}
+  boot.hidden=false;
+  const lines=[["Loading websites","ok"],["Brewing matcha","ok"],["Waking up Joey","ok"]];
+  const num=$("#bootNum"),bar=$("#bootBar"),log=$("#bootLog"),t0=performance.now(),D=1500;let shown=0,done=false;
+  function end(){if(done)return;done=true;boot.classList.add("out");setTimeout(()=>boot.hidden=true,750)}
+  $("#bootSkip").addEventListener("click",end);boot.addEventListener("click",end);
+  (function f(t){if(done)return;const k=Math.min(1,(t-t0)/D),e=1-Math.pow(1-k,2.2);
+    num.textContent=String(Math.round(e*100)).padStart(3,"0");bar.style.width=(e*100)+"%";
+    const want=Math.floor(k*lines.length+.2);while(shown<Math.min(want,lines.length)){const[a,b]=lines[shown++];log.insertAdjacentHTML("beforeend",`<span>${a}… <b>${b}</b></span>`)}
+    if(k<1)requestAnimationFrame(f);else setTimeout(end,250)})(t0);
+})();
+
+/* ---------- toolbox ---------- */
+const TOOLS=[["Swift","Sw","#F05138"],["SwiftUI","UI","#3D5AFE"],["Vision","Vi","#14151B"],["JavaScript","JS","#C9A400"],["HTML & CSS","<>","#FF5B3A"],["Node.js","N","#3C873A"],["Express","Ex","#14151B"],["Supabase","Sb","#3ECF8E"],["Claude API","C","#D97757"],["MediaPipe","MP","#0097A7"],["Python","Py","#3776AB"],["Square","Sq","#14151B"],["Duffel","Df","#3D5AFE"],["GitHub","GH","#14151B"],["Xcode","Xc","#1C8EF9"],["Lenis","Le","#FF8AD8"]];
+const toolHTML=list=>list.map(([n,i,c])=>`<span class="tool"><i style="--c:${c}">${i.replace("<","&lt;").replace(">","&gt;")}</i>${n}</span>`).join("");
+const half=Math.ceil(TOOLS.length/2),r1=TOOLS.slice(0,half),r2=TOOLS.slice(half);
+$("#tb1").innerHTML=toolHTML(r1)+toolHTML(r1)+toolHTML(r1);$("#tb2").innerHTML=toolHTML(r2)+toolHTML(r2)+toolHTML(r2);
+if(RM){$("#tb1").innerHTML=toolHTML(TOOLS);$("#tb2").remove()}
+
+/* ---------- command palette ---------- */
+const go=id=>{const a=document.createElement("a");a.href=id;a.setAttribute("data-scr","");a.style.display="none";document.body.appendChild(a);a.click();a.remove()};
+const openUrl=u=>{const a=document.createElement("a");a.href=u;a.target="_blank";a.rel="noopener";document.body.appendChild(a);a.click();a.remove()};
+const CMDS=[
+  ["Go to","Life Dashboard","◎","#3D5AFE",()=>go("#lifedash"),"Section"],
+  ["Go to","All about me","J","#FFD23E",()=>go("#about"),"Section"],
+  ["Go to","How I got here","✈","#7CC8FF",()=>go("#journey"),"Section"],
+  ["Go to","Things I've built","▦","#C8F25A",()=>go("#work"),"Section"],
+  ["Go to","Try my apps","↓","#FF8AD8",()=>go("#apps"),"Section"],
+  ["Go to","Need a website?","✦","#FFD23E",()=>go("#hire"),"Section"],
+  ["Go to","Contact Joey","@","#FF5B3A",()=>go("#contact"),"Section"],
+  ["Do","Download Life Dashboard for Mac","◎","#3D5AFE",()=>openUrl("https://github.com/joeysayshi/joey-apps/raw/main/downloads/LifeDashboard-v0.1.dmg"),"Download"],
+  ["Do","Play One More Floor","▦","#FF8AD8",()=>openUrl("https://joeysayshi.github.io/joey-apps/one-more-floor/"),"Game"],
+  ["Do","Play Rigged Arcade","✊","#7CC8FF",()=>openUrl("https://joeysayshi.github.io/joey-apps/rigged-arcade/"),"Game"],
+  ["Do","Open Aerofare","3D","#FFD23E",()=>openUrl("https://joeysayshi.github.io/joey-apps/aerofare/"),"Site"],
+  ["Do","Open Ben's Places","BP","#C8F25A",()=>openUrl("https://joeysayshi.github.io/joey-apps/bens-places/"),"Site"],
+  ["Do","Visit Joey's Flights","✈","#7CC8FF",()=>openUrl("https://www.joeysbarmitzvah.site"),"Site"],
+  ["Do","Visit the Profire redesign","PF","#FF5B3A",()=>openUrl("https://profireweb.vercel.app"),"Site"],
+  ["Do","Copy my email address","@","#FFD23E",async()=>{try{await navigator.clipboard.writeText("joeylsummers@gmail.com");egg("Email copied")}catch(e){go("#contact")}},"Copy"],
+  ["Do","Start a project with Joey","→","#FF5B3A",()=>{setKind("A new website");go("#contact")},"Contact"],
+  ["Do","Open GitHub","GH","#E4E6EE",()=>openUrl("https://github.com/joeysayshi"),"Link"],
+  ["Secret","Matcha mode","M","#7CB342",()=>matcha(),"???"]
+];
+const cmdk=$("#cmdk"),cmdIn=$("#cmdIn"),cmdList=$("#cmdList");let cmdSel=0,cmdShown=[],lastFocus=null;
+function cmdRender(){
+  const q=cmdIn.value.trim().toLowerCase();
+  cmdShown=CMDS.filter(c=>c[0]!=="Secret"||q.includes("matcha")).filter(c=>!q||(c[1]+" "+c[5]).toLowerCase().includes(q));
+  if(cmdSel>=cmdShown.length)cmdSel=Math.max(0,cmdShown.length-1);
+  let html="",grp="";
+  cmdShown.forEach((c,i)=>{if(c[0]!==grp){grp=c[0];html+=`<li class="cmd-group" role="presentation">${grp}</li>`}
+    html+=`<li class="cmd-item" role="option" id="cmd${i}" data-i="${i}" aria-selected="${i===cmdSel}"><span class="ci" style="background:${c[3]}">${c[2]}</span>${c[1]}<small>${c[5]}</small></li>`});
+  cmdList.innerHTML=html||`<li class="cmd-empty">Nothing matches. Try "apps" or "email".</li>`;
+  cmdIn.setAttribute("aria-activedescendant",cmdShown.length?"cmd"+cmdSel:"");
+  const el=$("#cmd"+cmdSel);if(el)el.scrollIntoView({block:"nearest"});
+}
+function cmdOpen(){lastFocus=document.activeElement;cmdk.classList.add("open");cmdIn.value="";cmdSel=0;cmdRender();setTimeout(()=>cmdIn.focus(),30)}
+function cmdClose(){cmdk.classList.remove("open");if(lastFocus&&lastFocus.focus)lastFocus.focus({preventScroll:true})}
+function cmdRun(i){const c=cmdShown[i];if(!c)return;cmdClose();setTimeout(c[4],120)}
+$$("[data-cmdk]").forEach(b=>b.addEventListener("click",cmdOpen));
+cmdk.addEventListener("click",e=>{if(e.target===cmdk)cmdClose()});
+cmdIn.addEventListener("input",()=>{cmdSel=0;cmdRender()});
+cmdList.addEventListener("click",e=>{const li=e.target.closest(".cmd-item");if(li)cmdRun(+li.dataset.i)});
+cmdList.addEventListener("pointermove",e=>{const li=e.target.closest(".cmd-item");if(li&&+li.dataset.i!==cmdSel){cmdSel=+li.dataset.i;$$(".cmd-item",cmdList).forEach(x=>x.setAttribute("aria-selected",String(+x.dataset.i===cmdSel)));cmdIn.setAttribute("aria-activedescendant","cmd"+cmdSel)}});
+addEventListener("keydown",e=>{
+  if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();cmdk.classList.contains("open")?cmdClose():cmdOpen();return}
+  if(!cmdk.classList.contains("open")){if(e.key==="/"&&!/input|textarea|select/i.test(document.activeElement.tagName)){e.preventDefault();cmdOpen()}return}
+  if(e.key==="Escape"){e.preventDefault();cmdClose()}
+  else if(e.key==="ArrowDown"||e.key==="ArrowUp"){e.preventDefault();if(!cmdShown.length)return;cmdSel=(cmdSel+(e.key==="ArrowDown"?1:-1)+cmdShown.length)%cmdShown.length;cmdRender()}
+  else if(e.key==="Enter"){e.preventDefault();cmdRun(cmdSel)}
+  else if(e.key==="Tab"){e.preventDefault();cmdIn.focus()}
+});
+
+/* ---------- spotlight on project cards + magnetic buttons ---------- */
+if(FINE&&!RM){
+  grid.addEventListener("pointermove",e=>{const w=e.target.closest(".win");if(!w)return;const r=w.getBoundingClientRect();w.style.setProperty("--mx",(e.clientX-r.left)+"px");w.style.setProperty("--my",(e.clientY-r.top)+"px")});
+  $$(".btn.solid, .btn.sunny, .nav .cta, .bm-cta").forEach(b=>{b.classList.add("mag");
+    b.addEventListener("pointermove",e=>{const r=b.getBoundingClientRect();b.style.transform=`translate(${((e.clientX-r.left-r.width/2)*.25).toFixed(1)}px,${((e.clientY-r.top-r.height/2)*.35).toFixed(1)}px)`});
+    b.addEventListener("pointerleave",()=>b.style.transform="")});
+}
+
+/* ---------- easter egg: type "matcha" ---------- */
+function egg(t){const el=$("#eggToast");el.textContent=t;el.classList.add("show");clearTimeout(egg.t);egg.t=setTimeout(()=>el.classList.remove("show"),2400)}
+function matcha(){
+  egg("Matcha mode unlocked");if(RM)return;
+  for(let i=0;i<46;i++){const d=document.createElement("span");d.className="drop";d.style.left=(Math.random()*100)+"vw";
+    const g=[ "#7CB342","#9CCC65","#558B2F","#C5E1A5"][i%4];d.style.background=g;d.style.setProperty("--rot",(Math.random()*720-360)+"deg");
+    d.style.animationDuration=(1.8+Math.random()*1.8)+"s";d.style.animationDelay=(Math.random()*.9)+"s";d.style.scale=(.6+Math.random()*.9).toFixed(2);
+    document.body.appendChild(d);setTimeout(()=>d.remove(),4200)}
+}
+let typed="";
+addEventListener("keydown",e=>{if(/input|textarea/i.test(document.activeElement.tagName)||e.key.length!==1)return;typed=(typed+e.key.toLowerCase()).slice(-6);if(typed==="matcha"){typed="";matcha()}});
 
 /* ---------- scroll loop ---------- */
 const hdr=$("#hdr"),prog=$("#prog");
@@ -1243,6 +1456,9 @@ function frame(){
     const lit=Math.round(kk*nws.length);nws.forEach((w,i)=>w.classList.toggle("lit",i<lit));
     if($("#board").getBoundingClientRect().top<innerHeight*.8)flipBoard();
   }
+  {const jr=$("#journeyEl").getBoundingClientRect();const jk=Math.max(0,Math.min(1,(innerHeight*.55-jr.top)/jr.height));const hgt=jk*jr.height;
+   $("#jFill").style.height=hgt+"px";$("#jPlane").style.top=hgt+"px";
+   $$(".stop").forEach(st=>st.classList.toggle("past",st.getBoundingClientRect().top+30<innerHeight*.55))}
   look();
   requestAnimationFrame(frame);
 }
